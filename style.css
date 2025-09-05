@@ -4,13 +4,15 @@ body {
   display: flex;
   justify-content: center;
   padding: 50px;
+  min-height: 100vh;
+  margin: 0;
 }
 
 .container {
   background: white;
   padding: 30px;
   border-radius: 10px;
-  width: 300px;
+  width: 320px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
@@ -18,6 +20,8 @@ select, button {
   width: 100%;
   padding: 10px;
   margin: 10px 0;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 #playlist {
@@ -29,4 +33,5 @@ select, button {
   padding: 8px;
   margin: 5px 0;
   border-left: 4px solid #2196f3;
+  font-weight: 600;
 }
