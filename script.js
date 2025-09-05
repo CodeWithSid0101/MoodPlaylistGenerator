@@ -1,121 +1,88 @@
-const clientId = 'e220331f3909482ab6ebce2730a49e8f';
-const redirectUri = 'https://mood-playlist-generator-tau.vercel.app/callback';
-const scopes = 'user-read-private user-read-email playlist-read-private';
+// === Shared constants ===
+const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your Spotify Client ID
+const redirect_uri = 'https://mood-playlist-generator-tau.vercel.app/callback'; // Your Redirect URI registered in Spotify Dashboard
+const scopes = [
+  'playlist-read-private',
+  'playlist-modify-public',
+  'playlist-modify-private',
+  'user-read-private',
+  'user-read-email',
+].join(' ');
 
-const loginBtn = document.getElementById('login-button');
-const moodSelector = document.getElementById('mood');
-const generateBtn = document.getElementById('generate');
-const weatherDiv = document.getElementById('weather');
-const playlistDiv = document.getElementById('playlist');
-const userInfoDiv = document.getElementById('user-info');
-
-let accessToken = localStorage.getItem('spotifyAccessToken');
-
-// If user is logged in, hide login button and enable mood selector
-if (accessToken) {
-  loginBtn.style.display = 'none';
-  moodSelector.disabled = false;
-  generateBtn.disabled = false;
-  fetchUserProfile();
-} else {
-  loginBtn.style.display = 'block';
-  moodSelector.disabled = true;
-  generateBtn.disabled = true;
+// Helper to extract access token from URL hash
+function getAccessTokenFromUrl() {
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  return params.get('access_token');
 }
 
-loginBtn.addEventListener('click', () => {
-  const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
-  window.location.href = authUrl;
-});
+// --------- CODE FOR index.html ---------
+if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+  const loginBtn = document.getElementById('login');
+  const playlistDiv = document.getElementById('playlist');
+  const moodSelector = document.getElementById('mood');
 
-generateBtn.addEventListener('click', async () => {
-  try {
-    // 1. Get user location
-    const coords = await getUserLocation();
-    const lat = coords.latitude;
-    const lon = coords.longitude;
+  loginBtn.addEventListener('click', () => {
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}`;
+    window.location.href = authUrl;
+  });
+}
 
-    // 2. Fetch weather using lat/lon
-    const apiKey = '81165c8839597701582170a90141d335'; // Your OpenWeatherMap API key
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
-    );
+// --------- CODE FOR /callback/index.html ---------
+if (window.location.pathname.includes('/callback')) {
+  const accessToken = getAccessTokenFromUrl();
 
-    if (!res.ok) throw new Error("Failed to fetch weather");
+  if (!accessToken) {
+    document.body.innerHTML = '<p style="color:red;">No access token found. Please <a href="/">login again</a>.</p>';
+    throw new Error('No access token found');
+  }
 
-    const data = await res.json();
+  // Clean URL (remove token from address bar)
+  window.history.replaceState({}, document.title, '/callback');
 
-    const weather = data.weather[0].main;
-    const temp = data.main.temp;
-    const city = data.name;
+  const moodSelector = document.getElementById('mood');
+  const generateBtn = document.getElementById('generate');
+  const playlistDiv = document.getElementById('playlist');
 
-    weatherDiv.innerHTML = `📍 Weather in ${city}: <strong>${weather}</strong>, ${temp}°C`;
+  const moodSeedTracks = {
+    happy: '3AJwUDP919kvQ9QcozQPxg',  // Pharrell Williams - Happy
+    sad: '7qEHsqek33rTcFNT9PFqLf',    // Adele - Someone Like You
+    chill: '1vCWHaC5f2uS3yhpwWbIA6',  // Avicii - Wake Me Up (chill vibe)
+    angry: '0VjIjW4GlUZAMYd2vXMi3b'   // The Weeknd - Blinding Lights (energetic)
+  };
 
-    // 3. Generate playlist by mood from Spotify
+  generateBtn.addEventListener('click', async () => {
     const mood = moodSelector.value;
-    const playlists = await getPlaylistsByMood(mood);
+    playlistDiv.innerHTML = 'Loading playlist...';
 
-    if (playlists.length > 0) {
-      playlistDiv.innerHTML = `<h3>🎧 Your Playlist:</h3>` + playlists.map(pl => 
-        `<div class="song">
-          <a href="${pl.external_urls.spotify}" target="_blank">${pl.name}</a> by ${pl.owner.display_name}
-        </div>`).join('');
-    } else {
-      playlistDiv.innerHTML = "No playlists found for this mood.";
-    }
+    try {
+      const seedTrack = moodSeedTracks[mood];
+      const res = await fetch(`https://api.spotify.com/v1/recommendations?seed_tracks=${seedTrack}&limit=10`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
 
-  } catch (error) {
-    console.error("Error:", error);
-    weatherDiv.innerHTML = "❌ Could not get location or weather.";
-    playlistDiv.innerHTML = "";
-  }
-});
+      if (!res.ok) {
+        playlistDiv.innerHTML = 'Failed to fetch playlist. Please refresh or login again.';
+        return;
+      }
 
-// Fetch Spotify user profile
-async function fetchUserProfile() {
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch user profile');
-    const data = await res.json();
-    userInfoDiv.innerHTML = `<p>Logged in as <strong>${data.display_name}</strong></p>`;
-  } catch (error) {
-    console.error(error);
-    localStorage.removeItem('spotifyAccessToken');
-    userInfoDiv.innerHTML = 'Failed to load user info. Please login again.';
-    loginBtn.style.display = 'block';
-    moodSelector.disabled = true;
-    generateBtn.disabled = true;
-  }
-}
+      const data = await res.json();
 
-// Get playlists by mood keyword using Spotify Search API
-async function getPlaylistsByMood(mood) {
-  try {
-    const query = encodeURIComponent(mood);
-    const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=playlist&limit=5`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch playlists');
-    const data = await res.json();
-    return data.playlists.items;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-}
+      if (!data.tracks || data.tracks.length === 0) {
+        playlistDiv.innerHTML = 'No tracks found for this mood.';
+        return;
+      }
 
-// Get user geolocation
-function getUserLocation() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject("Geolocation not supported");
-    } else {
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve(pos.coords),
-        err => reject(err.message)
-      );
+      playlistDiv.innerHTML = '<h3>🎧 Your Playlist:</h3>' + data.tracks.map(track => {
+        const artists = track.artists.map(a => a.name).join(', ');
+        return `<div class="song">${track.name} - ${artists}</div>`;
+      }).join('');
+
+    } catch (error) {
+      playlistDiv.innerHTML = 'Error loading playlist.';
+      console.error(error);
     }
   });
 }
