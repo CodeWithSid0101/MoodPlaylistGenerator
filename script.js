@@ -1,5 +1,5 @@
 // === Spotify App Config ===
-const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your actual Client ID
+const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your Client ID
 const redirect_uri = 'https://mood-playlist-generator-tau.vercel.app/callback';
 const scopes = [
   'playlist-read-private',
@@ -9,14 +9,14 @@ const scopes = [
   'user-read-email'
 ].join(' ');
 
-// === Helper: Extract token from URL hash ===
+// === Helper to get token from URL ===
 function getAccessTokenFromUrl() {
-  const hash = window.location.hash.substring(1); // Remove '#'
+  const hash = window.location.hash.substring(1); // remove '#'
   const params = new URLSearchParams(hash);
   return params.get('access_token');
 }
 
-// === Shared mood → seed track mapping ===
+// === Mood to seed track map ===
 const moodSeedTracks = {
   happy: '3AJwUDP919kvQ9QcozQPxg',  // Happy – Pharrell Williams
   sad: '7qEHsqek33rTcFNT9PFqLf',    // Someone Like You – Adele
@@ -24,17 +24,19 @@ const moodSeedTracks = {
   angry: '0VjIjW4GlUZAMYd2vXMi3b'   // Blinding Lights – The Weeknd
 };
 
-// === Entry for Homepage (index.html) ===
+// === For index.html (Login Page) ===
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
   const loginBtn = document.getElementById('login');
 
-  loginBtn.addEventListener('click', () => {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}`;
-    window.location.href = authUrl;
-  });
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => {
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=token&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}`;
+      window.location.href = authUrl;
+    });
+  }
 }
 
-// === Entry for Callback Page (callback/index.html) ===
+// === For callback/index.html (Playlist Page) ===
 if (window.location.pathname.includes('/callback')) {
   const accessToken = getAccessTokenFromUrl();
 
@@ -43,10 +45,10 @@ if (window.location.pathname.includes('/callback')) {
     throw new Error('No access token found');
   }
 
-  // Clean up URL after extracting token
+  // Clean up URL bar
   window.history.replaceState({}, document.title, '/callback');
 
-  // DOM Elements
+  // DOM elements
   const generateBtn = document.getElementById('generate');
   const moodSelector = document.getElementById('mood');
   const playlistDiv = document.getElementById('playlist');
@@ -54,6 +56,7 @@ if (window.location.pathname.includes('/callback')) {
   generateBtn.addEventListener('click', async () => {
     const mood = moodSelector.value;
     const seedTrack = moodSeedTracks[mood];
+
     playlistDiv.innerHTML = '🎶 Generating playlist...';
 
     try {
@@ -63,17 +66,16 @@ if (window.location.pathname.includes('/callback')) {
         }
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch Spotify recommendations');
-      }
+      if (!res.ok) throw new Error('Failed to fetch tracks');
 
       const data = await res.json();
-      if (!data.tracks || data.tracks.length === 0) {
-        playlistDiv.innerHTML = 'No songs found for this mood.';
+
+      if (!data.tracks.length) {
+        playlistDiv.innerHTML = 'No tracks found.';
         return;
       }
 
-      // Display tracks
+      // Show playlist
       playlistDiv.innerHTML = '<h3>🎧 Your Playlist:</h3>' + data.tracks.map(track => {
         const artistNames = track.artists.map(a => a.name).join(', ');
         return `<div class="song">${track.name} - ${artistNames}</div>`;
@@ -81,7 +83,7 @@ if (window.location.pathname.includes('/callback')) {
 
     } catch (err) {
       console.error(err);
-      playlistDiv.innerHTML = '❌ Error fetching playlist. Please try again.';
+      playlistDiv.innerHTML = '❌ Could not fetch playlist. Try again.';
     }
   });
 }
