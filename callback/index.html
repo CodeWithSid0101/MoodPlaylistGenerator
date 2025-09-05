@@ -2,22 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Spotify Callback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spotify Callback - Mood Playlist</title>
+  <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-  <h2>Logging in with Spotify...</h2>
-  <script>
-    // Extract access token from URL hash
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
+  <div class="container">
+    <h1>🎵 Your Mood Playlist</h1>
 
-    if (accessToken) {
-      localStorage.setItem('spotifyAccessToken', accessToken);
-      window.location.href = '/';
-    } else {
-      document.body.innerText = 'Failed to get access token.';
-    }
-  </script>
+    <label for="mood">Select your mood:</label>
+    <select id="mood">
+      <option value="happy">😊 Happy</option>
+      <option value="sad">😢 Sad</option>
+      <option value="chill">😌 Chill</option>
+      <option value="angry">😠 Angry</option>
+    </select>
+
+    <button id="generate">Generate Playlist</button>
+
+    <div id="playlist"></div>
+  </div>
+
+  <script src="../script.js"></script>
 </body>
 </html>
