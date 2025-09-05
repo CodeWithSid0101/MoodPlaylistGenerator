@@ -1,0 +1,32 @@
+body {
+  font-family: sans-serif;
+  background: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  padding: 50px;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 300px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+select, button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+#playlist {
+  margin-top: 20px;
+}
+
+.song {
+  background: #f9f9f9;
+  padding: 8px;
+  margin: 5px 0;
+  border-left: 4px solid #2196f3;
+}
