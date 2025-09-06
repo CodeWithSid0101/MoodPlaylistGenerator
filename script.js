@@ -1,6 +1,6 @@
 // === Spotify App Config ===
 const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your Client ID
-const redirect_uri = 'https://mood-playlist-generator-tau.vercel.app/callback';
+const redirect_uri = 'https://mood-playlist-generator-tau.vercel.app/callback/index.html';
 const scopes = [
   'playlist-read-private',
   'playlist-modify-public',
@@ -25,7 +25,7 @@ const moodSeedTracks = {
 };
 
 // === For index.html (Login Page) ===
-if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+if (window.location.pathname === '/' || window.location.pathname.endsWith('/index.html')) {
   const loginBtn = document.getElementById('login');
 
   if (loginBtn) {
@@ -38,15 +38,17 @@ if (window.location.pathname === '/' || window.location.pathname === '/index.htm
 
 // === For callback/index.html (Playlist Page) ===
 if (window.location.pathname.includes('/callback')) {
+  console.log("Callback page loaded:", window.location.href);
+
   const accessToken = getAccessTokenFromUrl();
 
   if (!accessToken) {
-    document.body.innerHTML = '<p style="color:red;">No access token found. Please <a href="/">login again</a>.</p>';
-    throw new Error('No access token found');
+    document.body.innerHTML = '<p style="color:red;">❌ No access token found. Please <a href="/">login again</a>.</p>';
+    throw new Error('No access token found in URL hash');
   }
 
-  // Clean up URL bar
-  window.history.replaceState({}, document.title, '/callback');
+  // Clean up URL bar (remove #access_token part)
+  window.history.replaceState({}, document.title, '/callback/index.html');
 
   // DOM elements
   const generateBtn = document.getElementById('generate');
