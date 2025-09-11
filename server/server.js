@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser';
 // Import routes
 import weatherRoutes from './routes/weather.js';
 import usersRoutes from './routes/users.js';
+import adminRoutes from './routes/admin-routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -74,41 +75,42 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS with specific origin and credentials
+// Define allowed origins
 const allowedOrigins = [
-  'http://localhost:10000',
-  'https://mood-playlist-generator-tau.vercel.app'
+  'http://localhost:3000',
+  'https://moodplaylistgenerator-wrzn.onrender.com',
+  'https://mood-playlist-generator-tau.vercel.app',
+  'http://localhost:5500' // For live server
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
     }
-    return callback(null, true);
-  },
-  credentials: true, // Required for cookies, authorization headers with HTTPS
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override', 'Accept'],
-  exposedHeaders: ['set-cookie'],
-  maxAge: 86400 // 24 hours
-}));
-
-// Enable pre-flight across-the-board
-app.options('*', cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    
+    // In production, only allow specific origins
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS blocked for origin:', origin);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
-  credentials: true
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600
+};
+
+// Enable CORS with options
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Parse cookies
 app.use(cookieParser());
@@ -241,7 +243,11 @@ const checkAuth = async (req, res, next) => {
   next();
 };
 
-// Apply auth middleware to all routes
+// API Routes
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/admin', adminRoutes);
+
+// Apply auth middleware to protected routes
 app.use(checkAuth);
 
 // Serve app page (requires authentication)

@@ -191,6 +191,23 @@ router.get('/spotify/callback', async (req, res) => {
 });
 
 // Register a new user
+// Debug endpoint to check if route is accessible
+router.get('/register', (req, res) => {
+  console.log('GET /register endpoint hit');
+  res.status(200).json({
+    status: 'success',
+    message: 'Registration endpoint is working',
+    method: 'GET',
+    post_available: true,
+    required_fields: {
+      username: 'string',
+      email: 'string',
+      password: 'string (min 8 chars, must include uppercase, lowercase, number, special char)'
+    }
+  });
+});
+
+// Register a new user
 router.post('/register', async (req, res, next) => {
   console.log('=== Registration Request ===');
   console.log('Headers:', JSON.stringify(req.headers, null, 2));
