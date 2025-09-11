@@ -161,9 +161,26 @@ app.use(hpp({
 // Compress all responses
 app.use(compression());
 
-// Serving static files from the public directory
-const publicPath = join(__dirname, '../public');
-app.use(express.static(publicPath));
+// Configure static file serving with proper MIME types
+const staticOptions = {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json');
+    }
+  }
+};
+
+// Serve static files from public directory
+const publicPath = join(__dirname, '..', 'public');
+app.use(express.static(publicPath, staticOptions));
+
+// Admin and callback routes with explicit MIME types
+app.use('/admin', express.static(join(__dirname, '..', 'public', 'admin'), staticOptions));
+app.use('/callback', express.static(join(__dirname, '..', 'public', 'callback'), staticOptions));
 
 // Serve the main page for the root route
 app.get('/', (req, res) => {

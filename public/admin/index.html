@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="./admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </head>
 <body>
   <div class="music-notes">
@@ -34,6 +35,9 @@
       <button id="export-btn" class="admin-btn">
         <i class="fas fa-file-export"></i> Export CSV
       </button>
+      <button id="logoutBtn" class="admin-btn btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
     </div>
     
     <div class="user-stats">
@@ -48,6 +52,12 @@
       <div class="stat-card">
         <h3>Approved</h3>
         <p id="approved-users">0</p>
+      </div>
+    </div>
+    
+    <div class="approvals-list" id="approvalsContainer">
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i> Loading pending approvals...
       </div>
     </div>
     

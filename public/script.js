@@ -12,7 +12,7 @@ const scopes = [
   'user-library-read',
   'user-library-modify',
   'user-read-recently-played'
-].join(' ');
+];
 
 // === PKCE Helper Functions ===
 function generateRandomString(length) {

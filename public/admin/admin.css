@@ -456,6 +456,122 @@ h1 {
   border-color: rgba(102, 126, 234, 0.3);
 }
 
+/* Loading Spinner */
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  color: #667eea;
+  font-size: 1.1rem;
+}
+
+.loading-spinner i {
+  margin-right: 0.5rem;
+}
+
+/* Logout Button */
+.btn-logout {
+  background: linear-gradient(135deg, #ff6b6b 0%, #f06595 100%) !important;
+  border: none;
+}
+
+.btn-logout:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #e64980 100%) !important;
+  transform: translateY(-2px);
+}
+
+/* Approval Items */
+.approval-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.approval-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.user-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.user-info p, .user-info small {
+  margin: 0.2rem 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.approval-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.approval-actions button {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.approval-actions .btn-approve {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
+}
+
+.approval-actions .btn-reject {
+  background: linear-gradient(135deg, #ff6b6b 0%, #f06595 100%);
+  color: white;
+}
+
+.approval-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Notification */
+.notification {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+  max-width: 350px;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #ff6b6b 0%, #f06595 100%);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* Pulse animation for new user notifications */
 .pulse-notification {
   animation: pulseGlow 2s ease-in-out infinite;
