@@ -24,61 +24,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Security headers with CSP configuration
+// Security headers with CSP configuration - temporarily disabled for testing
 app.use(helmet({
-  contentSecurityPolicy: {
-    useDefaults: true,
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
-        "https://cdnjs.cloudflare.com",
-        "https://accounts.spotify.com"
-      ],
-      scriptSrcElem: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://cdnjs.cloudflare.com",
-        "https://accounts.spotify.com"
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://cdnjs.cloudflare.com",
-        "https://accounts.spotify.com"
-      ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "blob:",
-        "https://*.scdn.co",
-        "https://i.scdn.co",
-        "https://mosaic.scdn.co",
-        "https://*.openweathermap.org",
-        "https://*.spotify.com"
-      ],
-      connectSrc: [
-        "'self'",
-        "https://accounts.spotify.com",
-        "https://api.spotify.com",
-        "https://api.openweathermap.org"
-      ],
-      frameSrc: [
-        "'self'",
-        "https://accounts.spotify.com"
-      ],
-      fontSrc: [
-        "'self'",
-        "https://cdnjs.cloudflare.com",
-        "data:",
-        "https://fonts.gstatic.com"
-      ]
-    },
-    reportOnly: false // Set to true in development to test CSP without enforcing it
-  },
-  crossOriginEmbedderPolicy: false // Required for Spotify Web Playback SDK
+  contentSecurityPolicy: false, // Temporarily disable CSP to identify the issue
+  crossOriginEmbedderPolicy: false, // Required for Spotify Web Playback SDK
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  originAgentCluster: false,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  strictTransportSecurity: {
+    maxAge: 15552000,
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 
 // Import routes
@@ -168,7 +126,7 @@ app.use(hpp({
 // Compress all responses
 app.use(compression());
 
-// Configure static file serving with proper MIME types and caching
+// Configure static file serving with proper MIME types
 const staticOptions = {
   setHeaders: (res, path) => {
     // Set proper MIME types
@@ -180,6 +138,20 @@ const staticOptions = {
       res.setHeader('Content-Type', 'application/json');
     } else if (path.endsWith('.html')) {
       res.setHeader('Content-Type', 'text/html');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (path.endsWith('.woff')) {
+      res.setHeader('Content-Type', 'font/woff');
+    } else if (path.endsWith('.woff2')) {
+      res.setHeader('Content-Type', 'font/woff2');
+    } else if (path.endsWith('.ttf')) {
+      res.setHeader('Content-Type', 'font/ttf');
+    } else if (path.endsWith('.eot')) {
+      res.setHeader('Content-Type', 'application/vnd.ms-fontobject');
     }
     
     // Disable caching for development
@@ -191,26 +163,27 @@ const staticOptions = {
 
 // Serve static files from public directory
 const publicPath = join(__dirname, '..', 'public');
-app.use(express.static(publicPath, staticOptions));
 
-// Explicitly serve admin files with proper MIME types
-app.get('/admin/*', (req, res, next) => {
-  const options = {
-    ...staticOptions,
-    root: join(publicPath, 'admin')
-  };
-  
-  const file = req.params[0] || 'index.html';
-  res.sendFile(file, options, (err) => {
-    if (err) {
-      console.error('Error serving admin file:', err);
-      next(err);
-    }
-  });
-});
+// Serve admin files with explicit MIME types
+app.use('/admin', express.static(join(publicPath, 'admin'), {
+  ...staticOptions,
+  fallthrough: false
+}));
 
 // Serve callback files
 app.use('/callback', express.static(join(publicPath, 'callback'), staticOptions));
+
+// Serve other static files
+app.use(express.static(publicPath, staticOptions));
+
+// Handle admin route to serve index.html for any admin path
+app.get('/admin*', (req, res) => {
+  res.sendFile(join(publicPath, 'admin', 'index.html'), {
+    headers: {
+      'Content-Type': 'text/html'
+    }
+  });
+});
 
 // Serve the main page for the root route
 app.get('/', (req, res) => {
