@@ -3,18 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self';
-    script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com;
-    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com https://fonts.googleapis.com;
-    style-src-elem 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com https://fonts.googleapis.com;
-    img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://mosaic.scdn.co https://*.openweathermap.org https://*.spotify.com;
-    font-src 'self' https: data:;
-    connect-src 'self' https://accounts.spotify.com https://api.spotify.com https://api.openweathermap.org;
-    frame-src 'self' https://accounts.spotify.com;
-    media-src 'self' blob: https://*.spotifycdn.com;
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';">
+  <!-- CSP will be set by the server with proper nonce -->
   <title>Mood Playlist Generator - Admin Dashboard</title>
   <!-- Preload critical CSS -->
   <link rel="preload" href="/style.css" as="style">
@@ -84,28 +73,13 @@
       </div>
     </div>
     
-    <div class="approvals-list" id="approvalsContainer">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i> Loading pending approvals...
-      </div>
-    </div>
-    
-    <div class="users-table-container">
-      <h2>Registered Users</h2>
-      <div class="table-filters">
-        <select id="status-filter">
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-
     <main class="admin-content">
       <section class="admin-section">
         <h2>Pending Approvals</h2>
         <div id="status-message" class="alert" style="display: none;"></div>
         <div id="pending-approvals" class="approval-list">
           <!-- Pending approvals will be loaded here -->
-          <div class="loading-spinner">
+          <div id="loading-spinner" class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
             <p>Loading pending approvals...</p>
           </div>
@@ -144,32 +118,7 @@
     </main>
   </div>
 
-  <script nonce="<%= nonce %>">
-    // Inline script to load admin-fixed.js with error handling
-    (function() {
-      const script = document.createElement('script');
-      script.src = '/admin/admin-fixed.js';
-      script.async = true;
-      script.onerror = function() {
-        console.error('Failed to load admin-fixed.js');
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.innerHTML = `
-          <h3>Error Loading Admin Interface</h3>
-          <p>Failed to load the admin interface. Please try refreshing the page.</p>
-          <p>If the problem persists, please contact support.</p>
-          <button onclick="window.location.reload()" class="btn btn-primary">
-            <i class="fas fa-sync-alt"></i> Refresh Page
-            cursor: pointer;
-            margin-top: 0.5rem;
-          ">
-            Refresh Page
-          </button>
-        `;
-        document.body.prepend(errorDiv);
-      };
-      document.body.appendChild(script);
-    })();
-  </script>
+  <!-- Main application script -->
+  <script nonce="<%= nonce %>" src="/admin/admin-loader.js"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@ import compression from 'compression';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
 import fs from 'fs/promises';
+import { webcrypto as crypto } from 'crypto';
 import adminRoutes from './routes/admin-routes.js';
 import { nonceMiddleware } from './middleware/nonce.js';
 import { setCredentials } from './spotify-api.js';
@@ -29,12 +30,41 @@ app.use(express.urlencoded({ extended: true }));
 
 // Generate a nonce for CSP
 const generateNonce = () => {
-  return crypto.randomBytes(16).toString('base64');
+  const array = new Uint8Array(16);
+  return crypto.getRandomValues(array).reduce((acc, byte) => {
+    return acc + byte.toString(16).padStart(2, '0');
+  }, '');
 };
 
 // Add nonce to all responses and setup nonce middleware
 app.use((req, res, next) => {
-  res.locals.nonce = generateNonce();
+  const nonce = generateNonce();
+  res.locals.nonce = nonce;
+  
+  // Set CSP header with nonce and required directives
+  const csp = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src-elem 'self' 'nonce-${nonce}'`,
+    `style-src 'self' 'nonce-${nonce}'`,
+    `img-src 'self' data: blob:`,
+    `font-src 'self' https: data:`,
+    `connect-src 'self'`,
+    `media-src 'self' blob:`,
+    `object-src 'none'`,
+    `frame-src 'self'`,
+    `frame-ancestors 'self'`,
+    `form-action 'self'`,
+    `base-uri 'self'`,
+    `upgrade-insecure-requests`
+  ].join('; ');
+  
+  // Set CSP header
+  res.setHeader('Content-Security-Policy', csp);
+  
+  // For debugging
+  console.log('CSP Header Set:', csp.split(';').join(';\n  '));
+  
   next();
 });
 
@@ -130,10 +160,12 @@ app.use(helmet({
 // Import routes
 import weatherRouter from './routes/weather.js';
 import usersRouter from './routes/users.js';
+import adminRouter from './routes/admin-routes.js';
 
 // Initialize routes
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/weather', weatherRouter);
+app.use('/admin', adminRouter);
 
 // Serve weather page at the root
 app.use('/weather', weatherRouter);
@@ -168,6 +200,9 @@ console.log(`- OpenWeather API Key: ${process.env.OPENWEATHER_API_KEY ? 'Set' : 
 
 // Initialize routes
 initializeRoutes();
+
+// Mount admin routes
+app.use('/api/admin', adminRoutes);
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
@@ -249,6 +284,11 @@ const staticOptions = {
   }
 };
 
+// Serve favicon
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(join(__dirname, '..', 'public', 'favicon.ico'));
+});
+
 // Serve static files with proper MIME types and nonce injection
 const publicPath = join(__dirname, '..', 'public');
 
@@ -308,12 +348,24 @@ app.use((req, res, next) => {
   }
 });
 
-// Handle admin route to serve index.html for any admin path
+// Handle admin route to serve index.html for any admin path with nonce
 app.get('/admin*', (req, res) => {
-  res.sendFile(join(publicPath, 'admin', 'index.html'), {
-    headers: {
-      'Content-Type': 'text/html; charset=UTF-8'
+  const nonce = generateNonce();
+  
+  // Read and process the template
+  const filePath = join(publicPath, 'admin', 'index.html');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading admin template:', err);
+      return res.status(500).send('Error loading admin interface');
     }
+    
+    // Replace the nonce placeholder in the template
+    const processedHtml = data.replace(/<%= nonce %>/g, nonce);
+    
+    // Send the processed HTML with proper headers
+    res.set('Content-Type', 'text/html; charset=UTF-8');
+    res.send(processedHtml);
   });
 });
 
