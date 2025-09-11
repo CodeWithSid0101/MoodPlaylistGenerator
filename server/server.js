@@ -27,11 +27,39 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.spotify.com", "https://accounts.spotify.com", "https://api.openweathermap.org"]
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://cdnjs.cloudflare.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://cdnjs.cloudflare.com"
+      ],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdnjs.cloudflare.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "blob:",
+        "https://i.scdn.co"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.spotify.com",
+        "https://accounts.spotify.com",
+        "https://api.openweathermap.org"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://accounts.spotify.com"
+      ]
     }
   }
 }));

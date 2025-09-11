@@ -47,7 +47,10 @@ ensureDataDirectory()
 
 // Validation schemas
 const userSchema = Joi.object({
-  username: Joi.string().min(3).max(30).required()
+  username: Joi.string()
+    .min(3)
+    .max(30)
+    .required()
     .pattern(/^[a-zA-Z0-9_]+$/)
     .messages({
       'string.pattern.base': 'Username can only contain letters, numbers, and underscores',
@@ -73,35 +76,35 @@ const userSchema = Joi.object({
 // Helper functions
 const readUsers = async () => {
   try {
-    await ensureDataDirectory();
-    
-    // Check if file exists first
-    try {
-      await fs.access(usersFilePath);
-    } catch (error) {
-      // File doesn't exist, return empty users
-      return { users: [] };
-    }
-    
     const data = await fs.readFile(usersFilePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
+    if (error.code === 'ENOENT') {
+      // If file doesn't exist, return empty users array
+      return { users: [] };
+    }
     console.error('Error reading users file:', error);
-    return { users: [] };
+    throw new Error(`Failed to read users: ${error.message}`);
   }
 };
 
 const writeUsers = async (users) => {
   try {
-    // Ensure data directory exists
-    await ensureDataDirectory();
+    if (!Array.isArray(users)) {
+      throw new Error('Users must be an array');
+    }
     
-    // Write the users array as an object with a users property
+    await fs.mkdir(path.dirname(usersFilePath), { recursive: true });
     await fs.writeFile(usersFilePath, JSON.stringify({ users }, null, 2), 'utf8');
     return true;
   } catch (error) {
     console.error('Error writing users file:', error);
-    return false;
+    console.error('Error details:', {
+      code: error.code,
+      path: usersFilePath,
+      message: error.message
+    });
+    throw new Error(`Failed to save user data: ${error.message}`);
   }
 };
 
@@ -189,8 +192,18 @@ router.post('/register', async (req, res, next) => {
     const { username, email, password } = value;
     
     // Check if user already exists
-    const usersData = await readUsers();
-    const users = usersData.users || [];
+    let usersData;
+    try {
+      usersData = await readUsers();
+    } catch (error) {
+      console.error('Error reading users:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to read user data'
+      });
+    }
+    
+    const users = usersData?.users || [];
     
     if (users.some(user => user.email === email)) {
       return res.status(400).json({
