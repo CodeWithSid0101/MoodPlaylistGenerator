@@ -4,26 +4,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const signupMessage = document.getElementById('signup-message');
   const signupBtn = document.getElementById('signup-btn');
 
-  // Firebase configuration - would be needed for actual implementation
-  // For this demo, we'll simulate the registration process
-
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(signupForm);
     const data = {
-      username: formData.get('username'),
-      email: formData.get('email')
+      username: formData.get('username').trim(),
+      email: formData.get('email').trim(),
+      password: formData.get('password')
     };
 
     // Basic validation
-    if (!data.username || !data.email) {
+    if (!data.username || !data.email || !data.password) {
       showMessage('Please fill in all fields.', 'error');
       return;
     }
 
     if (!isValidEmail(data.email)) {
       showMessage('Please enter a valid email address.', 'error');
+      return;
+    }
+    
+    if (data.password.length < 6) {
+      showMessage('Password must be at least 6 characters long.', 'error');
       return;
     }
 
@@ -36,10 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add slight delay for better UX
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Registration...';
+      signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
-      // Call the actual API
-      const result = await fetch('/api/v1/users/register', {
+      // Call the API
+      const response = await fetch('/api/v1/users/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,41 +50,37 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(data)
       });
       
-      if (!result.ok) {
-        const errorData = await result.json();
-        throw new Error(errorData.message || 'Registration failed');
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Registration failed');
       }
       
-      const response = await result.json();
-
       // Show success with enhanced feedback
       signupBtn.innerHTML = '<i class="fas fa-check"></i> Registration Successful!';
       signupBtn.style.background = 'linear-gradient(135deg, #1db954 0%, #1ed760 100%)';
-
-      showMessage(`Registration successful! Welcome ${data.username}. Your request is pending admin approval.`, 'success');
-
+      showMessage(`Registration successful! Welcome ${data.username}. You can now log in.`, 'success');
+      
       // Reset form with animation
+      signupForm.reset();
+      signupForm.style.transform = 'scale(0.98)';
+      
+      // Animate back to normal size
       setTimeout(() => {
-        signupForm.reset();
-
-        // Add success animation to form
-        signupForm.style.transform = 'scale(0.98)';
-        setTimeout(() => {
-          signupForm.style.transform = 'scale(1)';
-        }, 200);
-      }, 1000);
-
+        signupForm.style.transform = 'scale(1)';
+      }, 200);
+      
       // Show redirect countdown
       let countdown = 3;
       const countdownInterval = setInterval(() => {
-        showMessage(`Registration successful! Redirecting to login in ${countdown}...`, 'success');
+        showMessage(`Redirecting to login in ${countdown}...`, 'success');
         countdown--;
         if (countdown < 0) {
           clearInterval(countdownInterval);
           window.location.href = 'index.html';
         }
       }, 1000);
-
+      
       // Store user data in localStorage for demo purposes
       localStorage.setItem('spotify_dev_username', data.username);
       localStorage.setItem('spotify_dev_email', data.email);

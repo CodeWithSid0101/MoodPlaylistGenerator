@@ -76,54 +76,62 @@ const writeUsers = (data) => {
 // Register a new user
 router.post('/register', async (req, res, next) => {
   try {
+    console.log('Registration request received:', req.body);
+    
     // Validate request body
     const { error, value } = userSchema.validate(req.body);
     if (error) {
+      console.error('Validation error:', error.details);
       return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        error: error.details.map(d => d.message)
+        status: 'error',
+        message: error.details[0].message
       });
     }
-
+    
     const { username, email, password } = value;
-    const data = readUsers();
     
     // Check if user already exists
-    if (data.users.some(user => user.email === email)) {
-      return res.status(409).json({
-        success: false,
-        message: 'User with this email already exists'
+    const users = await readUsers();
+    if (users.some(user => user.email === email)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email already registered'
       });
     }
-
-    // Create new user (in a real app, hash the password!)
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Create new user
     const newUser = {
       id: uuidv4(),
       username,
       email,
-      password, // In production, this should be hashed
+      password: hashedPassword,
+      isAdmin: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
-    data.users.push(newUser);
     
-    if (writeUsers(data)) {
-      // In a real app, you would send a welcome email here
-      res.status(201).json({
-        success: true,
-        message: 'User registered successfully',
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          createdAt: newUser.createdAt
-        }
-      });
-    } else {
+    // Save user
+    users.push(newUser);
+    const writeSuccess = await writeUsers(users);
+    
+    if (!writeSuccess) {
       throw new Error('Failed to save user data');
     }
+    
+    // Don't send password hash in response
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    res.status(201).json({
+      status: 'success',
+      message: 'User registered successfully',
+      data: {
+        user: userWithoutPassword
+      }
+    });
   } catch (error) {
     console.error('Error in user registration:', error);
     next(error);
