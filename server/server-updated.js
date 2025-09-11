@@ -168,7 +168,9 @@ app.post('/api/auth/spotify/callback', async (req, res) => {
       },
       body: new URLSearchParams({
         code,
-        redirect_uri: process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3000/callback',
+        redirect_uri: process.env.NODE_ENV === 'production'
+          ? 'https://mood-playlist-generator.onrender.com/callback'
+          : 'http://localhost:10000/callback',
         grant_type: 'authorization_code'
       })
     });
@@ -316,7 +318,9 @@ app.listen(PORT, () => {
   setCredentials({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-    redirectUri: process.env.SPOTIFY_REDIRECT_URI
+    redirectUri: process.env.NODE_ENV === 'production'
+      ? 'https://mood-playlist-generator.onrender.com/callback'
+      : 'http://localhost:10000/callback'
   });
 });
 

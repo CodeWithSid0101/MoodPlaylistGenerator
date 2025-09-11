@@ -120,7 +120,9 @@ router.get('/spotify/login', (req, res) => {
     response_type: 'code',
     client_id: process.env.SPOTIFY_CLIENT_ID,
     scope: scope,
-    redirect_uri: 'http://localhost:10000/api/users/spotify/callback',
+    redirect_uri: process.env.NODE_ENV === 'production' 
+      ? 'https://mood-playlist-generator.onrender.com/api/users/spotify/callback'
+      : 'http://localhost:10000/api/users/spotify/callback',
     state: 'some-state-for-csrf-protection'
   });
 
@@ -140,7 +142,9 @@ router.get('/spotify/callback', async (req, res) => {
     const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: 'http://localhost:10000/api/users/spotify/callback',
+      redirect_uri: process.env.NODE_ENV === 'production'
+        ? 'https://mood-playlist-generator.onrender.com/api/users/spotify/callback'
+        : 'http://localhost:10000/api/users/spotify/callback',
       client_id: process.env.SPOTIFY_CLIENT_ID,
       client_secret: process.env.SPOTIFY_CLIENT_SECRET
     }), {

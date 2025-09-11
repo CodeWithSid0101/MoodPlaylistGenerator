@@ -1,6 +1,9 @@
 // === Spotify App Config ===
 const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your Client ID
-const redirect_uri = 'http://localhost:10000/callback/index.html';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const redirect_uri = isLocalhost 
+  ? 'http://localhost:10000/callback/index.html' 
+  : 'https://mood-playlist-generator.onrender.com/callback/index.html';
 const scopes = [
   'playlist-read-private',
   'playlist-modify-public',
