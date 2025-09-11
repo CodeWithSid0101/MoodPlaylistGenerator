@@ -192,77 +192,145 @@ router.get('/spotify/callback', async (req, res) => {
 
 // Register a new user
 router.post('/register', async (req, res, next) => {
+  console.log('=== Registration Request ===');
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+  
   try {
-    console.log('Registration request received:', req.body);
-    
-    // Validate request body
-    const { error, value } = userSchema.validate(req.body);
-    if (error) {
-      console.error('Validation error:', error.details);
+    if (!req.body) {
+      console.error('No request body received');
       return res.status(400).json({
         status: 'error',
-        message: error.details[0].message
+        message: 'Request body is required'
+      });
+    }
+    
+    // Log raw body for debugging
+    console.log('Raw body:', JSON.stringify(req.body));
+    
+    // Validate request body
+    const { error, value } = userSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorDetails = error.details.map(detail => ({
+        field: detail.path[0],
+        message: detail.message
+      }));
+      
+      console.error('Validation errors:', JSON.stringify(errorDetails, null, 2));
+      return res.status(400).json({
+        status: 'error',
+        message: 'Validation failed',
+        errors: errorDetails
       });
     }
     
     const { username, email, password } = value;
+    console.log('Processing registration for:', { username, email });
     
     // Check if user already exists
     let usersData;
     try {
+      console.log('Reading users file...');
       usersData = await readUsers();
+      console.log('Current users count:', usersData?.users?.length || 0);
     } catch (error) {
-      console.error('Error reading users:', error);
+      console.error('Error reading users file:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
       return res.status(500).json({
         status: 'error',
-        message: 'Failed to read user data'
+        message: 'Failed to read user data',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
     
-    const users = usersData?.users || [];
+    const users = Array.isArray(usersData?.users) ? usersData.users : [];
+    console.log('Checking for existing user with email:', email);
     
     if (users.some(user => user.email === email)) {
+      console.log('Registration failed: Email already exists');
       return res.status(400).json({
         status: 'error',
-        message: 'Email already registered'
+        message: 'Email already registered',
+        field: 'email'
       });
     }
     
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    try {
+      console.log('Hashing password...');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      
+      // Create new user
+      const newUser = {
+        id: uuidv4(),
+        username,
+        email,
+        password: hashedPassword,
+        isAdmin: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      console.log('New user created:', { id: newUser.id, email: newUser.email });
+      
+      // Save user
+      users.push(newUser);
+      console.log('Attempting to save users...');
+      
+      const writeSuccess = await writeUsers(users);
+      console.log('Write operation result:', writeSuccess);
+      
+      if (!writeSuccess) {
+        throw new Error('Failed to save user data: write operation returned false');
+      }
+      
+      // Don't send password hash in response
+      const { password: _, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json({
+        status: 'success',
+        message: 'User registered successfully',
+        data: {
+          user: userWithoutPassword
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error during user registration:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
+      
+      // Remove sensitive data from error response
+      const errorResponse = {
+        status: 'error',
+        message: 'Failed to register user',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      };
+      
+      res.status(500).json(errorResponse);
+    }
+  } catch (error) {
+    console.error('Unexpected error in registration endpoint:', error);
     
-    // Create new user
-    const newUser = {
-      id: uuidv4(),
-      username,
-      email,
-      password: hashedPassword,
-      isAdmin: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // Handle specific error cases
+    let statusCode = 500;
+    let errorMessage = 'An unexpected error occurred during registration';
     
-    // Save user
-    users.push(newUser);
-    const writeSuccess = await writeUsers(users);
-    
-    if (!writeSuccess) {
-      throw new Error('Failed to save user data');
+    if (error.name === 'ValidationError') {
+      statusCode = 400;
+      errorMessage = error.message;
     }
     
-    // Don't send password hash in response
-    const { password: _, ...userWithoutPassword } = newUser;
-    
-    res.status(201).json({
-      status: 'success',
-      message: 'User registered successfully',
-      data: {
-        user: userWithoutPassword
-      }
+    res.status(statusCode).json({
+      status: 'error',
+      message: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-  } catch (error) {
-    console.error('Error in user registration:', error);
     next(error);
   }
 });
