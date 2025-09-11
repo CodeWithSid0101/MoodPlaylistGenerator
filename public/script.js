@@ -56,18 +56,32 @@ async function checkUserApproval(email) {
       : `${window.location.origin}/api/users`;
     
     const response = await fetch(apiUrl);
+    
+    // If we can't reach the server, allow login to proceed
     if (!response.ok) {
-      throw new Error('Failed to fetch user data');
+      console.warn('Warning: Could not verify user approval status. Proceeding with login.');
+      return { approved: true, message: 'Proceeding with login...' };
     }
     
     const data = await response.json();
-    const user = data.users.find(u => u.email === email);
     
-    if (!user) {
-      return { approved: false, message: 'User not registered. Please sign up first.' };
+    // If no users exist in the system, allow login
+    if (!data.users || !Array.isArray(data.users)) {
+      return { approved: true, message: 'Proceeding with login...' };
     }
     
-    if (user.status !== 'approved') {
+    const user = data.users.find(u => u.email === email);
+    
+    // If user doesn't exist, prompt for signup
+    if (!user) {
+      return { 
+        approved: false, 
+        message: 'User not registered. Please sign up first.' 
+      };
+    }
+    
+    // If user exists but status is not approved
+    if (user.status && user.status !== 'approved') {
       return { 
         approved: false, 
         message: `Your account is ${user.status}. Please wait for admin approval.` 
@@ -97,7 +111,10 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
         // Check if user is registered and approved
         const userEmail = await showEmailModal();
         if (!userEmail) {
-          showNotification('Email is required to proceed.', 'error');
+          // Reset button state if user cancels the email modal
+          loginBtn.innerHTML = originalText;
+          loginBtn.classList.remove('btn-loading');
+          loginBtn.disabled = false;
           return;
         }
         
@@ -105,6 +122,11 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
         const approvalCheck = await checkUserApproval(userEmail);
         
         if (!approvalCheck.approved) {
+          // Reset button state
+          loginBtn.innerHTML = originalText;
+          loginBtn.classList.remove('btn-loading');
+          loginBtn.disabled = false;
+          
           showNotification(approvalCheck.message, 'error');
           if (approvalCheck.message.includes('not registered')) {
             setTimeout(() => {
