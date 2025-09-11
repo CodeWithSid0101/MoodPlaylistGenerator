@@ -167,8 +167,27 @@ const publicPath = join(__dirname, '..', 'public');
 // Serve admin files with explicit MIME types
 app.use('/admin', express.static(join(publicPath, 'admin'), {
   ...staticOptions,
-  fallthrough: false
+  fallthrough: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  }
 }));
+
+// Serve admin.js with correct MIME type
+app.get('/admin/admin.js', (req, res) => {
+  res.sendFile(join(publicPath, 'admin', 'admin.js'), {
+    headers: {
+      'Content-Type': 'application/javascript'
+    }
+  });
+});
 
 // Serve callback files
 app.use('/callback', express.static(join(publicPath, 'callback'), staticOptions));
@@ -180,7 +199,7 @@ app.use(express.static(publicPath, staticOptions));
 app.get('/admin*', (req, res) => {
   res.sendFile(join(publicPath, 'admin', 'index.html'), {
     headers: {
-      'Content-Type': 'text/html'
+      'Content-Type': 'text/html; charset=UTF-8'
     }
   });
 });

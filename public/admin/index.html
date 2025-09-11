@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self';
     script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com;
-    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com https://fonts.googleapis.com;
+    style-src-elem 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.spotify.com https://fonts.googleapis.com;
     img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://mosaic.scdn.co https://*.openweathermap.org https://*.spotify.com;
-    font-src 'self' https://cdnjs.cloudflare.com data: https://fonts.gstatic.com;
+    font-src 'self' https: data:;
     connect-src 'self' https://accounts.spotify.com https://api.spotify.com https://api.openweathermap.org;
     frame-src 'self' https://accounts.spotify.com;
     media-src 'self' blob: https://*.spotifycdn.com;
@@ -15,11 +16,27 @@
     base-uri 'self';
     form-action 'self';">
   <title>Mood Playlist Generator - Admin Dashboard</title>
-  <link rel="stylesheet" href="../style.css">
+  <!-- Preload critical CSS -->
+  <link rel="preload" href="/style.css" as="style">
+  <link rel="preload" href="/admin/admin.css" as="style">
+  
+  <!-- Load stylesheets -->
+  <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/admin/admin.css">
+  
+  <!-- Load Font Awesome with fallback -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
     integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    crossorigin="anonymous" 
+    referrerpolicy="no-referrer" 
+    onerror="console.error('Failed to load Font Awesome');" />
+    
+  <!-- Load Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" 
+    rel="stylesheet"
+    onerror="console.error('Failed to load Google Fonts');">
 </head>
 <body>
   <div class="music-notes">
@@ -112,6 +129,41 @@
     </div>
   </div>
 
-  <script src="../admin.js"></script>
+  <!-- Load admin.js with error handling -->
+  <script>
+    (function() {
+      const script = document.createElement('script');
+      script.src = '/admin/admin.js';
+      script.type = 'application/javascript';
+      script.onerror = function() {
+        console.error('Failed to load admin.js');
+        // Show error message to user
+        const errorDiv = document.createElement('div');
+        errorDiv.style.background = '#ffebee';
+        errorDiv.style.color = '#c62828';
+        errorDiv.style.padding = '1rem';
+        errorDiv.style.margin = '1rem';
+        errorDiv.style.borderRadius = '4px';
+        errorDiv.style.border = '1px solid #ef9a9a';
+        errorDiv.innerHTML = `
+          <h3>Error Loading Admin Panel</h3>
+          <p>Failed to load admin scripts. Please try refreshing the page or contact support if the issue persists.</p>
+          <button onclick="window.location.reload()" style="
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+          ">
+            Refresh Page
+          </button>
+        `;
+        document.body.prepend(errorDiv);
+      };
+      document.body.appendChild(script);
+    })();
+  </script>
 </body>
 </html>
