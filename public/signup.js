@@ -38,8 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Registration...';
 
-      // Simulate API call
-      const result = await simulateApiCall(data);
+      // Call the actual API
+      const result = await fetch('/api/v1/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!result.ok) {
+        const errorData = await result.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+      
+      const response = await result.json();
 
       // Show success with enhanced feedback
       signupBtn.innerHTML = '<i class="fas fa-check"></i> Registration Successful!';

@@ -28,6 +28,9 @@ import usersRouter from './routes/users.js';
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/weather', weatherRouter);
 
+// Serve weather page at the root
+app.use('/weather', weatherRouter);
+
 function initializeRoutes() {
   console.log('Routes initialized successfully');
   return true;

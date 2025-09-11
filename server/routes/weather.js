@@ -1,8 +1,19 @@
 import express from 'express';
 import axios from 'axios';
 import { getAccessToken } from '../spotify-api.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 const router = express.Router();
+
+// Get directory name in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Root endpoint
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/weather-music.html'));
+});
 
 // Weather to mood mapping
 const WEATHER_TO_MOOD = {
