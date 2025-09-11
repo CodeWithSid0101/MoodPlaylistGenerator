@@ -284,18 +284,31 @@ const staticOptions = {
   }
 };
 
-// Serve favicon
 app.get('/favicon.ico', (req, res) => {
   res.sendFile(join(__dirname, '..', 'public', 'favicon.ico'));
 });
 
-// Serve static files with proper MIME types and nonce injection
-const publicPath = join(__dirname, '..', 'public');
-
-// Custom static file handler with nonce injection
-const staticHandler = express.static(publicPath, {
+// Serve static files from public directory
+app.use(express.static(publicPath, {
   setHeaders: (res, path) => {
-    const ext = extname(path).toLowerCase();
+    // Set CSP header for all responses
+    const nonce = generateNonce();
+    const csp = [
+      `default-src 'self'`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      `script-src-elem 'self' 'nonce-${nonce}'`,
+      `style-src 'self' 'nonce-${nonce}'`,
+      `img-src 'self' data: blob:`,
+      `font-src 'self' https: data:`,
+      `connect-src 'self'`,
+      `media-src 'self' blob:`,
+      `object-src 'none'`,
+      `frame-src 'self'`,
+      `frame-ancestors 'self'`,
+      `form-action 'self'`,
+      `base-uri 'self'`,
+      `upgrade-insecure-requests`
+    ].join('; ');
     const mimeTypes = {
       '.js': 'application/javascript',
       '.css': 'text/css',
@@ -318,15 +331,10 @@ const staticHandler = express.static(publicPath, {
     
     // Disable caching for development
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
   }
-});
+}));
 
-// Serve all static files through our custom handler
-app.use(staticHandler);
-
-// Special handling for HTML files to inject nonce
+// Handle admin route - must be after static file serving
 app.use((req, res, next) => {
   if (req.path.endsWith('.html')) {
     const filePath = join(publicPath, req.path);
@@ -348,22 +356,50 @@ app.use((req, res, next) => {
   }
 });
 
-// Handle admin route to serve index.html for any admin path with nonce
-app.get('/admin*', (req, res) => {
+// Serve admin files directly
+app.use('/admin', express.static(join(publicPath, 'admin'), {
+  setHeaders: (res, path) => {
+    const nonce = generateNonce();
+    const csp = [
+      `default-src 'self'`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      `script-src-elem 'self' 'nonce-${nonce}'`,
+      `style-src 'self' 'nonce-${nonce}'`,
+      `img-src 'self' data: blob:`,
+      `font-src 'self' https: data:`,
+      `connect-src 'self'`,
+      `media-src 'self' blob:`,
+      `object-src 'none'`,
+      `frame-src 'self'`,
+      `frame-ancestors 'self'`,
+      `form-action 'self'`,
+      `base-uri 'self'`,
+      `upgrade-insecure-requests`
+    ].join('; ');
+    
+    res.setHeader('Content-Security-Policy', csp);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    
+    if (path.endsWith('.html')) {
+      res.locals.nonce = nonce;
+    }
+  }
+}));
+
+// Handle admin index route with nonce injection
+app.get('/admin', (req, res) => {
   const nonce = generateNonce();
-  
-  // Read and process the template
   const filePath = join(publicPath, 'admin', 'index.html');
+  
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading admin template:', err);
       return res.status(500).send('Error loading admin interface');
     }
     
-    // Replace the nonce placeholder in the template
     const processedHtml = data.replace(/<%= nonce %>/g, nonce);
-    
-    // Send the processed HTML with proper headers
     res.set('Content-Type', 'text/html; charset=UTF-8');
     res.send(processedHtml);
   });
