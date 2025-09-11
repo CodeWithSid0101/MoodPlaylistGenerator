@@ -30,7 +30,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
-        "'self'"
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'"
       ],
       scriptSrcElem: [
         "'self'",
@@ -47,23 +49,24 @@ app.use(helmet({
         "data:",
         "blob:",
         "https://*.openweathermap.org",
-        "https://i.scdn.co"
+        "https://i.scdn.co",
+        "https://*.spotify.com"
       ],
       connectSrc: [
         "'self'",
-        "https://api.spotify.com",
         "https://accounts.spotify.com",
+        "https://api.spotify.com",
         "https://api.openweathermap.org"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://accounts.spotify.com"
       ],
       fontSrc: [
         "'self'",
         "https://cdnjs.cloudflare.com",
         "data:",
         "https://fonts.gstatic.com"
-      ],
-      frameSrc: [
-        "'self'",
-        "https://accounts.spotify.com"
       ]
     },
     reportOnly: false // Set to true in development to test CSP without enforcing it

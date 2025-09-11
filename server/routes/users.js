@@ -109,7 +109,7 @@ router.post('/register', async (req, res, next) => {
     const { username, email, password } = value;
     
     // Check if user already exists
-    const users = await readUsers();
+    const { users = [] } = await readUsers();
     if (users.some(user => user.email === email)) {
       return res.status(400).json({
         status: 'error',
