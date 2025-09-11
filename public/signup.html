@@ -56,20 +56,24 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="<%= nonce %>">
     // Pre-fill email if coming from login page
     document.addEventListener('DOMContentLoaded', () => {
-      const pendingEmail = localStorage.getItem('pending_email');
-      if (pendingEmail) {
-        const emailInput = document.getElementById('email');
-        if (emailInput) {
-          emailInput.value = pendingEmail;
-          // Remove the pending email from storage
-          localStorage.removeItem('pending_email');
+      try {
+        const pendingEmail = localStorage.getItem('pending_email');
+        if (pendingEmail) {
+          const emailInput = document.getElementById('email');
+          if (emailInput) {
+            emailInput.value = pendingEmail;
+            // Remove the pending email from storage
+            localStorage.removeItem('pending_email');
+          }
         }
+      } catch (error) {
+        console.error('Error in signup page initialization:', error);
       }
     });
   </script>
-  <script src="signup.js"></script>
+  <script nonce="<%= nonce %>" src="/signup.js"></script>
 </body>
 </html>

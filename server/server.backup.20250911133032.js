@@ -11,8 +11,6 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
-import fs from 'fs/promises';
-import adminRoutes from './routes/admin-routes.js';
 import { nonceMiddleware } from './middleware/nonce.js';
 import { setCredentials } from './spotify-api.js';
 

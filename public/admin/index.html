@@ -98,62 +98,68 @@
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
-        </select>
-        <input type="text" id="search-input" placeholder="Search by name or email...">
-      </div>
-      <table id="users-table" class="users-table">
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Registration Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body">
-          <!-- User data will be populated here -->
-          <tr class="empty-state">
-            <td colspan="5">Loading user data...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    
-    <div id="notification" class="admin-notification"></div>
-    
-    <div class="admin-footer">
-      <a href="../index.html" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Main Site
-      </a>
-    </div>
+
+    <main class="admin-content">
+      <section class="admin-section">
+        <h2>Pending Approvals</h2>
+        <div id="status-message" class="alert" style="display: none;"></div>
+        <div id="pending-approvals" class="approval-list">
+          <!-- Pending approvals will be loaded here -->
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading pending approvals...</p>
+          </div>
+        </div>
+      </section>
+      
+      <section class="admin-section">
+        <h2>Registered Users</h2>
+        <div class="table-filters">
+          <select id="status-filter">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <input type="text" id="search-input" placeholder="Search by name or email...">
+        </div>
+        <table id="users-table" class="users-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Registration Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body">
+            <!-- User data will be populated here -->
+            <tr class="empty-state">
+              <td colspan="5">Loading user data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
   </div>
 
-  <!-- Load admin.js with error handling -->
-  <script>
+  <script nonce="<%= nonce %>">
+    // Inline script to load admin-fixed.js with error handling
     (function() {
       const script = document.createElement('script');
-      script.src = '/admin/admin.js';
-      script.type = 'application/javascript';
+      script.src = '/admin/admin-fixed.js';
+      script.async = true;
       script.onerror = function() {
-        console.error('Failed to load admin.js');
-        // Show error message to user
+        console.error('Failed to load admin-fixed.js');
         const errorDiv = document.createElement('div');
-        errorDiv.style.background = '#ffebee';
-        errorDiv.style.color = '#c62828';
-        errorDiv.style.padding = '1rem';
-        errorDiv.style.margin = '1rem';
-        errorDiv.style.borderRadius = '4px';
-        errorDiv.style.border = '1px solid #ef9a9a';
+        errorDiv.className = 'error-message';
         errorDiv.innerHTML = `
-          <h3>Error Loading Admin Panel</h3>
-          <p>Failed to load admin scripts. Please try refreshing the page or contact support if the issue persists.</p>
-          <button onclick="window.location.reload()" style="
-            background: #c62828;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+          <h3>Error Loading Admin Interface</h3>
+          <p>Failed to load the admin interface. Please try refreshing the page.</p>
+          <p>If the problem persists, please contact support.</p>
+          <button onclick="window.location.reload()" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Refresh Page
             cursor: pointer;
             margin-top: 0.5rem;
           ">

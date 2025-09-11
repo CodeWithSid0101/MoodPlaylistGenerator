@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show status message
     const showStatus = (message, type = 'info') => {
+        if (!statusMessage) return;
+        
         statusMessage.textContent = message;
         statusMessage.className = `alert alert-${type}`;
         statusMessage.style.display = 'block';
@@ -48,6 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render pending approvals
     const renderPendingApprovals = (users) => {
+        if (!pendingApprovals) return;
+        
         if (!users || users.length === 0) {
             pendingApprovals.innerHTML = '<p>No pending approvals</p>';
             return;
@@ -56,13 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingApprovals.innerHTML = users.map(user => `
             <div class="approval-item">
                 <div class="user-info">
-                    <h4>${user.username}</h4>
-                    <p>${user.email}</p>
+                    <h4>${escapeHtml(user.username)}</h4>
+                    <p>${escapeHtml(user.email)}</p>
                     <small>Registered: ${new Date(user.createdAt).toLocaleDateString()}</small>
                 </div>
                 <div class="approval-actions">
-                    <button class="btn btn-approve" data-user-id="${user.id}">Approve</button>
-                    <button class="btn btn-reject" data-user-id="${user.id}">Reject</button>
+                    <button class="btn btn-approve" data-user-id="${escapeHtml(user.id)}">Approve</button>
+                    <button class="btn btn-reject" data-user-id="${escapeHtml(user.id)}">Reject</button>
                 </div>
             </div>
         `).join('');
@@ -80,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle user approval/rejection
     const handleApproval = async (userId, approved) => {
         try {
-            const response = await fetch(`/api/admin/approve-user/${userId}`, {
+            const response = await fetch(`/api/admin/approve-user/${encodeURIComponent(userId)}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -107,72 +111,30 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/admin/login.html';
     };
 
-    // Event listeners
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
+    // Helper function to escape HTML
+    const escapeHtml = (unsafe) => {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    };
 
     // Initialize
-    if (checkAuth()) {
-        loadPendingApprovals();
-    }
-          <button class="btn-reject" data-user-id="${user.id}">Reject</button>
-        </div>
-      </div>
-    `).join('');
+    const init = () => {
+        if (checkAuth()) {
+            loadPendingApprovals();
+            
+            // Set up logout button if it exists
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+        }
+    };
 
-    // Add event listeners to buttons
-    document.querySelectorAll('.btn-approve').forEach(btn => {
-      btn.addEventListener('click', (e) => handleApproval(e.target.dataset.userId, true));
-    });
-
-    document.querySelectorAll('.btn-reject').forEach(btn => {
-      btn.addEventListener('click', (e) => handleApproval(e.target.dataset.userId, false));
-    });
-
-  } catch (error) {
-    console.error('Error loading pending approvals:', error);
-    showNotification('Failed to load pending approvals', 'error');
-  }
-}
-
-async function handleApproval(userId, approved) {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/api/v1/users/${userId}/status`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ approved })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to ${approved ? 'approve' : 'reject'} user`);
-    }
-
-    showNotification(`User ${approved ? 'approved' : 'rejected'} successfully`, 'success');
-    await loadPendingApprovals();
-  } catch (error) {
-    console.error(`Error ${approved ? 'approving' : 'rejecting'} user:`, error);
-    showNotification(`Failed to ${approved ? 'approve' : 'reject'} user`, 'error');
-  }
-}
-
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = '/index.html';
-}
-
-function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.remove();
-  }, 5000);
-}
+    // Start the application
+    init();
+});
