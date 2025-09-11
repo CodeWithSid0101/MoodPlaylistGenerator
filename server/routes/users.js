@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import Joi from 'joi';
-import { promises as fs } from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { addUserToDashboard, removeUserFromDashboard } from '../spotify-api.js';
@@ -76,14 +76,20 @@ const userSchema = Joi.object({
 // Helper functions
 const readUsers = async () => {
   try {
-    const data = await fs.readFile(usersFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      // If file doesn't exist, return empty users array
+    // Ensure directory exists
+    await fs.ensureDir(path.dirname(usersFilePath));
+    
+    // Check if file exists, if not create it with empty users array
+    const exists = await fs.pathExists(usersFilePath);
+    if (!exists) {
+      await fs.writeJson(usersFilePath, { users: [] }, { spaces: 2 });
       return { users: [] };
     }
-    console.error('Error reading users file:', error);
+    
+    // Read and parse the file
+    return await fs.readJson(usersFilePath);
+  } catch (error) {
+    console.error('Error in readUsers:', error);
     throw new Error(`Failed to read users: ${error.message}`);
   }
 };
@@ -94,15 +100,25 @@ const writeUsers = async (users) => {
       throw new Error('Users must be an array');
     }
     
-    await fs.mkdir(path.dirname(usersFilePath), { recursive: true });
-    await fs.writeFile(usersFilePath, JSON.stringify({ users }, null, 2), 'utf8');
+    // Ensure directory exists
+    await fs.ensureDir(path.dirname(usersFilePath));
+    
+    // Write the file with proper error handling
+    await fs.writeJson(usersFilePath, { users }, { spaces: 2 });
+    
+    // Verify the file was written
+    const fileStats = await fs.stat(usersFilePath);
+    if (fileStats.size === 0) {
+      throw new Error('Failed to write user data: File is empty');
+    }
+    
     return true;
   } catch (error) {
-    console.error('Error writing users file:', error);
-    console.error('Error details:', {
+    console.error('Error in writeUsers:', {
+      error: error.message,
       code: error.code,
       path: usersFilePath,
-      message: error.message
+      stack: error.stack
     });
     throw new Error(`Failed to save user data: ${error.message}`);
   }
