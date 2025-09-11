@@ -10,16 +10,18 @@ import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import { fileURLToPath } from 'url';
-import { dirname, join, extname } from 'path';
+import { dirname, join } from 'path';
 import fs from 'fs/promises';
+import path from 'path';
 import { webcrypto as crypto } from 'crypto';
 import adminRoutes from './routes/admin-routes.js';
 import { nonceMiddleware } from './middleware/nonce.js';
 import { setCredentials } from './spotify-api.js';
 
-// Get directory name in ES module
+// Define public path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const publicPath = path.join(__dirname, '..', 'public');
 
 // Initialize Express app
 const app = express();
