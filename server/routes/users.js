@@ -105,6 +105,68 @@ const writeUsers = async (users) => {
   }
 };
 
+// Spotify OAuth2 endpoints
+router.get('/spotify/login', (req, res) => {
+  const scope = [
+    'user-read-private',
+    'user-read-email',
+    'user-library-read',
+    'playlist-read-private',
+    'playlist-modify-public',
+    'playlist-modify-private'
+  ].join(' ');
+
+  const queryParams = new URLSearchParams({
+    response_type: 'code',
+    client_id: process.env.SPOTIFY_CLIENT_ID,
+    scope: scope,
+    redirect_uri: 'http://localhost:10000/api/users/spotify/callback',
+    state: 'some-state-for-csrf-protection'
+  });
+
+  res.redirect(`https://accounts.spotify.com/authorize?${queryParams}`);
+});
+
+// Spotify callback handler
+router.get('/spotify/callback', async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    return res.redirect(`/login?error=${encodeURIComponent(error)}`);
+  }
+
+  try {
+    // Exchange the authorization code for an access token
+    const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: 'http://localhost:10000/api/users/spotify/callback',
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      client_secret: process.env.SPOTIFY_CLIENT_SECRET
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    const { access_token, refresh_token, expires_in } = response.data;
+    
+    // Get user info
+    const userResponse = await axios.get('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    // Store tokens in session or database as needed
+    // For now, we'll just send them to the frontend
+    res.redirect(`/?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`);
+  } catch (error) {
+    console.error('Error during Spotify authentication:', error);
+    res.redirect('/login?error=authentication_failed');
+  }
+});
+
 // Register a new user
 router.post('/register', async (req, res, next) => {
   try {

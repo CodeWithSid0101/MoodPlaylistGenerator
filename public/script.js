@@ -1,6 +1,6 @@
 // === Spotify App Config ===
 const client_id = 'e220331f3909482ab6ebce2730a49e8f'; // Your Client ID
-const redirect_uri = 'https://moodplaylistgenerator-wrzn.onrender.com/callback/index.html';
+const redirect_uri = 'http://localhost:10000/callback/index.html';
 const scopes = [
   'playlist-read-private',
   'playlist-modify-public',
@@ -95,16 +95,46 @@ async function checkUserApproval(email) {
   }
 }
 
+// Check for existing valid session
+async function checkExistingSession() {
+  const accessToken = localStorage.getItem('spotify_access_token');
+  const expiresAt = localStorage.getItem('spotify_token_expires_at');
+  
+  // If we have a token and it's not expired
+  if (accessToken && expiresAt && new Date().getTime() < parseInt(expiresAt)) {
+    try {
+      // Verify the token is still valid
+      const userProfile = await fetchUserProfile(accessToken);
+      if (userProfile && !userProfile.error) {
+        // Token is valid, redirect to app
+        window.location.href = '/app';
+        return true;
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+      // Continue to login page if there's an error
+    }
+  }
+  
+  // Clear any invalid tokens
+  localStorage.removeItem('spotify_access_token');
+  localStorage.removeItem('spotify_refresh_token');
+  localStorage.removeItem('spotify_token_expires_at');
+  return false;
+}
+
 // === Start Authorization (Login Page) ===
 if (window.location.pathname === '/' || window.location.pathname.endsWith('/index.html')) {
+  // Check for existing session first
+  checkExistingSession();
+  
   const loginBtn = document.getElementById('login');
 
   if (loginBtn) {
     loginBtn.addEventListener('click', async () => {
       // Add loading state
       const originalText = loginBtn.innerHTML;
-      loginBtn.classList.add('btn-loading');
-      loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking Access...';
+      loginBtn.classList.add('loading');
       loginBtn.disabled = true;
       
       try {
@@ -113,7 +143,7 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
         if (!userEmail) {
           // Reset button state if user cancels the email modal
           loginBtn.innerHTML = originalText;
-          loginBtn.classList.remove('btn-loading');
+          loginBtn.classList.remove('loading');
           loginBtn.disabled = false;
           return;
         }
@@ -126,7 +156,7 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
           if (!approvalCheck.approved) {
             // Reset button state
             loginBtn.innerHTML = originalText;
-            loginBtn.classList.remove('btn-loading');
+            loginBtn.classList.remove('loading');
             loginBtn.disabled = false;
             
             showNotification(approvalCheck.message, 'error');
@@ -147,7 +177,7 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
         } catch (error) {
           console.error('Error during user verification:', error);
           loginBtn.innerHTML = originalText;
-          loginBtn.classList.remove('btn-loading');
+          loginBtn.classList.remove('loading');
           loginBtn.disabled = false;
           showNotification('Error verifying user. Please try again.', 'error');
         }
@@ -1697,19 +1727,143 @@ if (window.location.pathname.includes('/callback')) {
   })();
 }
 
+// Fetch user profile from Spotify API
+async function fetchUserProfile(accessToken) {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Spotify API error:', errorData);
+      return { error: errorData.error?.message || 'Failed to fetch user profile' };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return { error: error.message };
+  }
+}
+
 // Proceed with Spotify authentication
 async function proceedWithSpotifyAuth(loginBtn, originalText, userEmail) {
   try {
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Spotify...';
+    // Set loading state
+    loginBtn.classList.add('loading');
+    loginBtn.disabled = true;
     
+    // Hide any existing error messages
+    const errorElement = document.getElementById('auth-error');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+    
+    // Check for access token in URL parameters (from callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const expiresIn = urlParams.get('expires_in');
+    const error = urlParams.get('error');
+
+    if (error) {
+      console.error('Authentication error:', error);
+      // Show error message to user
+      const errorElement = document.getElementById('auth-error');
+      if (errorElement) {
+        const errorMessage = {
+          'access_denied': 'You denied access to the application.',
+          'invalid_token': 'The access token is invalid or has expired.',
+          'unsupported_response_type': 'Unsupported response type.',
+          'invalid_scope': 'The requested scope is invalid, unknown, or malformed.'
+        }[error] || `Authentication failed: ${error}`;
+        
+        errorElement.querySelector('p').textContent = errorMessage;
+        errorElement.style.display = 'flex';
+      }
+      
+      // Scroll to error message
+      errorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Reset button state
+      loginBtn.classList.remove('loading');
+      loginBtn.disabled = false;
+      return;
+    }
+    
+    if (accessToken) {
+      try {
+        // Store tokens in localStorage
+        localStorage.setItem('spotify_access_token', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('spotify_refresh_token', refreshToken);
+        }
+        
+        // Set token expiry time (current time + expires_in seconds - 5 minutes buffer)
+        const expiresInMs = expiresIn ? parseInt(expiresIn) * 1000 : 3600 * 1000; // Default to 1 hour if not provided
+        const expiresAt = new Date().getTime() + expiresInMs - (5 * 60 * 1000);
+        localStorage.setItem('spotify_token_expires_at', expiresAt.toString());
+
+        // Store approved user info
+        if (userEmail) {
+          localStorage.setItem('approved_user_email', userEmail);
+        }
+
+        // Verify the token is valid by making a test API call
+        const userProfile = await fetchUserProfile(accessToken);
+        if (!userProfile || userProfile.error) {
+          throw new Error('Failed to verify access token with Spotify API');
+        }
+
+        // Store user ID for future use
+        localStorage.setItem('spotify_user_id', userProfile.id);
+        
+        // Remove tokens from URL
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Show success message
+        showNotification(`Welcome, ${userProfile.display_name || 'User'}!`, 'success');
+        
+        // Redirect to app after a short delay
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+        
+        return;
+      } catch (error) {
+        console.error('Error processing authentication:', error);
+        // Clear invalid tokens
+        localStorage.removeItem('spotify_access_token');
+        localStorage.removeItem('spotify_refresh_token');
+        localStorage.removeItem('spotify_token_expires_at');
+        
+        // Show error
+        const errorElement = document.getElementById('auth-error');
+        if (errorElement) {
+          errorElement.querySelector('p').textContent = 'Failed to verify your Spotify account. Please try again.';
+          errorElement.style.display = 'flex';
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        loginBtn.classList.remove('loading');
+        loginBtn.disabled = false;
+        return;
+      }
+    }
+
+    // If we get here, we need to start the OAuth flow
     // Store approved user info
     localStorage.setItem('approved_user_email', userEmail);
-    
+
     // Generate PKCE code challenge
     const codeVerifier = generateRandomString(128);
     localStorage.setItem('code_verifier', codeVerifier);
     const codeChallenge = await generateCodeChallenge(codeVerifier);
-    
+
     // Build authorization URL
     const authUrl = new URL('https://accounts.spotify.com/authorize');
     const params = {
@@ -1721,22 +1875,23 @@ async function proceedWithSpotifyAuth(loginBtn, originalText, userEmail) {
       redirect_uri: redirect_uri,
       state: generateRandomString(16)
     };
-    
+
     Object.keys(params).forEach(key => {
       authUrl.searchParams.append(key, params[key]);
     });
-    
+
     // Redirect to Spotify
     showNotification('Redirecting to Spotify...', 'success');
     setTimeout(() => {
       window.location.href = authUrl.toString();
     }, 1000);
-    
   } catch (error) {
     console.error('Error during Spotify auth:', error);
-    loginBtn.innerHTML = originalText;
-    loginBtn.classList.remove('btn-loading');
-    loginBtn.disabled = false;
+    if (loginBtn) {
+      loginBtn.innerHTML = originalText;
+      loginBtn.classList.remove('btn-loading');
+      loginBtn.disabled = false;
+    }
     showNotification('Error connecting to Spotify. Please try again.', 'error');
   }
 }

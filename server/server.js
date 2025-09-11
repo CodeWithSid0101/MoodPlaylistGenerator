@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 // Import routes
 import weatherRoutes from './routes/weather.js';
@@ -45,8 +46,66 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS
+// CORS with specific origin and credentials
+const allowedOrigins = [
+  'http://localhost:10000',
+  'https://mood-playlist-generator-tau.vercel.app'
+];
+
 app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true, // Required for cookies, authorization headers with HTTPS
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override', 'Accept'],
+  exposedHeaders: ['set-cookie'],
+  maxAge: 86400 // 24 hours
+}));
+
+// Enable pre-flight across-the-board
+app.options('*', cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+// Parse cookies
+app.use(cookieParser());
+
+// Parse JSON and URL-encoded bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// CORS Headers for all responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
+
+// Trust first proxy (for production)
+app.set('trust proxy', 1);
+
+// CORS for specific routes
+app.use('/api', cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://mood-playlist-generator.onrender.com'] 
     : ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -63,9 +122,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files - serve from parent directory (project root)
-const staticPath = path.join(__dirname, '..');
-app.use(express.static(staticPath));
+// Serve static files from the public directory
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -82,17 +141,101 @@ app.use('/api/users', usersRoutes);
 
 // Serve main application
 app.get('/', (req, res) => {
-  res.sendFile(path.join(staticPath, 'index.html'));
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
+
+// Verify and refresh Spotify access token
+async function verifyAndRefreshToken(token) {
+  try {
+    // First, try to use the token to get user profile
+    const response = await fetch('https://api.spotify.com/v1/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      return { valid: true, token };
+    }
+
+    // If token is invalid/expired, try to refresh it
+    const errorData = await response.json();
+    if (response.status === 401 && errorData.error?.message === 'The access token expired') {
+      // In a real app, you'd implement token refresh logic here
+      // For now, we'll just return invalid
+      return { valid: false, error: 'Token expired' };
+    }
+
+    return { valid: false, error: errorData.error?.message || 'Invalid token' };
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return { valid: false, error: 'Failed to verify token' };
+  }
+}
+
+// Authentication middleware
+const checkAuth = async (req, res, next) => {
+  // Skip auth check for public routes
+  const publicRoutes = ['/', '/callback', '/login', '/favicon.ico'];
+  if (publicRoutes.some(route => req.path.startsWith(route))) {
+    return next();
+  }
+
+  // Check for token in query params, headers, or cookies
+  const token = req.query.token || 
+               req.headers.authorization?.split(' ')[1] ||
+               req.cookies?.spotify_access_token;
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No access token provided' });
+  }
+  
+  // Verify the token
+  const { valid, error, newToken } = await verifyAndRefreshToken(token);
+  
+  if (!valid) {
+    if (req.path.startsWith('/api')) {
+      return res.status(401).json({ error: 'Invalid or expired token', details: error });
+    }
+    return res.redirect('/');
+  }
+  
+  // If we got a new token, set it in the response
+  if (newToken) {
+    res.cookie('spotify_access_token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600000 // 1 hour
+    });
+  }
+  
+  // Attach token to request
+  req.token = newToken || token;
+  next();
+};
+
+// Apply auth middleware to all routes
+app.use(checkAuth);
+
+// Serve app page (requires authentication)
+app.get('/app', checkAuth, (req, res) => {
+  res.sendFile(path.join(publicPath, 'app.html'), {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    }
+  });
 });
 
 // Serve admin page
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(staticPath, 'admin', 'index.html'));
+  res.sendFile(path.join(publicPath, 'admin', 'index.html'));
 });
 
 // Serve callback page
 app.get('/callback', (req, res) => {
-  res.sendFile(path.join(staticPath, 'callback', 'index.html'));
+  res.sendFile(path.join(publicPath, 'callback', 'index.html'));
 });
 
 // Error handling middleware
@@ -122,7 +265,7 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Static files served from: ${staticPath}`);
+  console.log(`Static files served from: ${publicPath}`);
 });
 
 export default app;

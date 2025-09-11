@@ -41,11 +41,23 @@
       </div>
     </div>
     
-    <button id="login" class="login-btn">
-      <i class="fab fa-spotify"></i> Login with Spotify
-    </button>
-    
-    <p class="privacy-note">We access your playlists, top tracks, and music preferences to create personalized mood-based recommendations</p>
+    <div class="login-container">
+      <button id="login" class="login-btn">
+        <span class="btn-content">
+          <i class="fab fa-spotify"></i> Login with Spotify
+        </span>
+        <span class="btn-loader">
+          <i class="fas fa-spinner fa-spin"></i> Connecting...
+        </span>
+      </button>
+      
+      <p class="privacy-note">We access your playlists, top tracks, and music preferences to create personalized mood-based recommendations</p>
+      
+      <div id="auth-error" class="error-message" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Authentication failed. Please try again.</p>
+      </div>
+    </div>
     
     <div class="login-link">
       <p>Need developer access? <a href="signup.html">Sign up here</a></p>

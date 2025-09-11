@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoodPlaylist Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo-container">
+        <i class="fas fa-music"></i>
+        <h1>MoodPlaylist Generator</h1>
+      </div>
+      <div class="user-info">
+        <span id="username">Loading...</span>
+        <button id="logout" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <h3>Mood</h3>
+          <select id="mood" class="mood-select">
+            <option value="happy">😊 Happy</option>
+            <option value="sad">😢 Sad</option>
+            <option value="energetic">⚡ Energetic</option>
+            <option value="relaxed">😌 Relaxed</option>
+            <option value="focused">🎯 Focused</option>
+            <option value="romantic">💖 Romantic</option>
+          </select>
+        </div>
+
+        <div class="sidebar-section">
+          <h3>Generate</h3>
+          <button id="generate-btn" class="btn-primary">
+            <i class="fas fa-magic"></i> Generate Playlist
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <h3>My Playlists</h3>
+          <div id="playlist-list" class="playlist-list">
+            <!-- Playlists will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+        <div id="playlist-container" class="playlist-container">
+          <div class="welcome-message">
+            <h2>Welcome to MoodPlaylist Generator</h2>
+            <p>Select a mood and click "Generate Playlist" to create your perfect playlist!</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="notification" class="notification"></div>
+  <audio id="preview-audio" style="display: none;"></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>
