@@ -27,29 +27,36 @@ app.use(express.urlencoded({ extended: true }));
 // Security headers with CSP configuration
 app.use(helmet({
   contentSecurityPolicy: {
+    useDefaults: true,
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
         "'unsafe-inline'",
-        "'unsafe-eval'"
+        "'unsafe-eval'",
+        "https://cdnjs.cloudflare.com",
+        "https://accounts.spotify.com"
       ],
       scriptSrcElem: [
         "'self'",
         "'unsafe-inline'",
-        "'unsafe-eval'"
+        "https://cdnjs.cloudflare.com",
+        "https://accounts.spotify.com"
       ],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
-        "https://cdnjs.cloudflare.com"
+        "https://cdnjs.cloudflare.com",
+        "https://accounts.spotify.com"
       ],
       imgSrc: [
         "'self'",
         "data:",
         "blob:",
-        "https://*.openweathermap.org",
+        "https://*.scdn.co",
         "https://i.scdn.co",
+        "https://mosaic.scdn.co",
+        "https://*.openweathermap.org",
         "https://*.spotify.com"
       ],
       connectSrc: [
@@ -161,16 +168,24 @@ app.use(hpp({
 // Compress all responses
 app.use(compression());
 
-// Configure static file serving with proper MIME types
+// Configure static file serving with proper MIME types and caching
 const staticOptions = {
   setHeaders: (res, path) => {
+    // Set proper MIME types
     if (path.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
     } else if (path.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
     } else if (path.endsWith('.json')) {
       res.setHeader('Content-Type', 'application/json');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
     }
+    
+    // Disable caching for development
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   }
 };
 
@@ -178,9 +193,24 @@ const staticOptions = {
 const publicPath = join(__dirname, '..', 'public');
 app.use(express.static(publicPath, staticOptions));
 
-// Admin and callback routes with explicit MIME types
-app.use('/admin', express.static(join(__dirname, '..', 'public', 'admin'), staticOptions));
-app.use('/callback', express.static(join(__dirname, '..', 'public', 'callback'), staticOptions));
+// Explicitly serve admin files with proper MIME types
+app.get('/admin/*', (req, res, next) => {
+  const options = {
+    ...staticOptions,
+    root: join(publicPath, 'admin')
+  };
+  
+  const file = req.params[0] || 'index.html';
+  res.sendFile(file, options, (err) => {
+    if (err) {
+      console.error('Error serving admin file:', err);
+      next(err);
+    }
+  });
+});
+
+// Serve callback files
+app.use('/callback', express.static(join(publicPath, 'callback'), staticOptions));
 
 // Serve the main page for the root route
 app.get('/', (req, res) => {
