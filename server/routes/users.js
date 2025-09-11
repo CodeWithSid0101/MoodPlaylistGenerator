@@ -47,9 +47,27 @@ ensureDataDirectory()
 
 // Validation schemas
 const userSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(30).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{8,30}$')).required()
+  username: Joi.string().min(3).max(30).required()
+    .pattern(/^[a-zA-Z0-9_]+$/)
+    .messages({
+      'string.pattern.base': 'Username can only contain letters, numbers, and underscores',
+      'string.min': 'Username must be at least 3 characters long',
+      'string.max': 'Username cannot be longer than 30 characters',
+      'any.required': 'Username is required'
+    }),
+  email: Joi.string().email().required()
+    .messages({
+      'string.email': 'Please enter a valid email address',
+      'any.required': 'Email is required'
+    }),
+  password: Joi.string().min(8).max(30).required()
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/)
+    .messages({
+      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
+      'string.min': 'Password must be at least 8 characters long',
+      'string.max': 'Password cannot be longer than 30 characters',
+      'any.required': 'Password is required'
+    })
 });
 
 // Helper functions

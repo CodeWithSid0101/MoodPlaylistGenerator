@@ -24,18 +24,51 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure CSP headers
+// Security headers with CSP configuration
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      imgSrc: ["'self'", "data:", "https://*.openweathermap.org"],
-      connectSrc: ["'self'", "https://api.spotify.com", "https://accounts.spotify.com", "https://api.openweathermap.org"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-    }
-  }
+      scriptSrc: [
+        "'self'"
+      ],
+      scriptSrcElem: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdnjs.cloudflare.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://*.openweathermap.org",
+        "https://i.scdn.co"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.spotify.com",
+        "https://accounts.spotify.com",
+        "https://api.openweathermap.org"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://cdnjs.cloudflare.com",
+        "data:",
+        "https://fonts.gstatic.com"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://accounts.spotify.com"
+      ]
+    },
+    reportOnly: false // Set to true in development to test CSP without enforcing it
+  },
+  crossOriginEmbedderPolicy: false // Required for Spotify Web Playback SDK
 }));
 
 // Import routes

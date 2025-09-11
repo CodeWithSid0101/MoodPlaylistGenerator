@@ -119,22 +119,39 @@ if (window.location.pathname === '/' || window.location.pathname.endsWith('/inde
         }
         
         loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying User...';
-        const approvalCheck = await checkUserApproval(userEmail);
         
-        if (!approvalCheck.approved) {
-          // Reset button state
+        try {
+          const approvalCheck = await checkUserApproval(userEmail);
+          
+          if (!approvalCheck.approved) {
+            // Reset button state
+            loginBtn.innerHTML = originalText;
+            loginBtn.classList.remove('btn-loading');
+            loginBtn.disabled = false;
+            
+            showNotification(approvalCheck.message, 'error');
+            
+            if (approvalCheck.message.includes('not registered')) {
+              // Store email for signup flow
+              localStorage.setItem('pending_email', userEmail);
+              setTimeout(() => {
+                window.location.href = 'signup.html';
+              }, 1500);
+            }
+            return;
+          }
+          
+          // If we get here, user is approved - proceed with Spotify auth
+          await proceedWithSpotifyAuth(loginBtn, originalText, userEmail);
+          
+        } catch (error) {
+          console.error('Error during user verification:', error);
           loginBtn.innerHTML = originalText;
           loginBtn.classList.remove('btn-loading');
           loginBtn.disabled = false;
-          
-          showNotification(approvalCheck.message, 'error');
-          if (approvalCheck.message.includes('not registered')) {
-            setTimeout(() => {
-              window.location.href = 'signup.html';
-            }, 2000);
-          }
-          return;
+          showNotification('Error verifying user. Please try again.', 'error');
         }
+        return;
         
         // Store approved user info
         localStorage.setItem('approved_user_email', userEmail);
@@ -1680,6 +1697,50 @@ if (window.location.pathname.includes('/callback')) {
   })();
 }
 
+// Proceed with Spotify authentication
+async function proceedWithSpotifyAuth(loginBtn, originalText, userEmail) {
+  try {
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Spotify...';
+    
+    // Store approved user info
+    localStorage.setItem('approved_user_email', userEmail);
+    
+    // Generate PKCE code challenge
+    const codeVerifier = generateRandomString(128);
+    localStorage.setItem('code_verifier', codeVerifier);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    
+    // Build authorization URL
+    const authUrl = new URL('https://accounts.spotify.com/authorize');
+    const params = {
+      response_type: 'code',
+      client_id: client_id,
+      scope: scopes.join(' '),
+      code_challenge_method: 'S256',
+      code_challenge: codeChallenge,
+      redirect_uri: redirect_uri,
+      state: generateRandomString(16)
+    };
+    
+    Object.keys(params).forEach(key => {
+      authUrl.searchParams.append(key, params[key]);
+    });
+    
+    // Redirect to Spotify
+    showNotification('Redirecting to Spotify...', 'success');
+    setTimeout(() => {
+      window.location.href = authUrl.toString();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Error during Spotify auth:', error);
+    loginBtn.innerHTML = originalText;
+    loginBtn.classList.remove('btn-loading');
+    loginBtn.disabled = false;
+    showNotification('Error connecting to Spotify. Please try again.', 'error');
+  }
+}
+
 // === Utility Functions ===
 function showNotification(message, type = 'info') {
   // Remove existing notifications
@@ -1775,6 +1836,14 @@ function showEmailModal() {
     const cancelBtn = document.getElementById('cancelEmail');
     const closeBtn = document.getElementById('closeModal');
     const modalContainer = modal.querySelector('.modal-container');
+    
+    // Pre-fill email if available in localStorage
+    const savedEmail = localStorage.getItem('pending_login_email');
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+      // Select the text for easy editing
+      emailInput.select();
+    }
 
     // Show modal with animation
     modal.classList.add('show');

@@ -56,35 +56,44 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(result.message || 'Registration failed');
       }
       
-      // Show success with enhanced feedback
-      signupBtn.innerHTML = '<i class="fas fa-check"></i> Registration Successful!';
-      signupBtn.style.background = 'linear-gradient(135deg, #1db954 0%, #1ed760 100%)';
-      showMessage(`Registration successful! Welcome ${data.username}. You can now log in.`, 'success');
-      
-      // Reset form with animation
-      signupForm.reset();
-      signupForm.style.transform = 'scale(0.98)';
-      
-      // Animate back to normal size
-      setTimeout(() => {
-        signupForm.style.transform = 'scale(1)';
-      }, 200);
-      
-      // Show redirect countdown
-      let countdown = 3;
-      const countdownInterval = setInterval(() => {
-        showMessage(`Redirecting to login in ${countdown}...`, 'success');
-        countdown--;
-        if (countdown < 0) {
-          clearInterval(countdownInterval);
-          window.location.href = 'index.html';
-        }
-      }, 1000);
-      
-      // Store user data in localStorage for demo purposes
-      localStorage.setItem('spotify_dev_username', data.username);
-      localStorage.setItem('spotify_dev_email', data.email);
-      localStorage.setItem('spotify_dev_registered', 'true');
+      if (result.status === 'success') {
+        // Show success with enhanced feedback
+        signupBtn.innerHTML = '<i class="fas fa-check"></i> Registration Successful!';
+        signupBtn.style.background = 'linear-gradient(135deg, #1db954 0%, #1ed760 100%)';
+        
+        // Store the email for auto-filling the login form
+        localStorage.setItem('pending_login_email', data.email);
+        
+        // Store user data in localStorage for demo purposes
+        localStorage.setItem('spotify_dev_username', data.username);
+        localStorage.setItem('spotify_dev_email', data.email);
+        localStorage.setItem('spotify_dev_registered', 'true');
+        
+        // Show success message with countdown
+        let countdown = 3;
+        const countdownInterval = setInterval(() => {
+          const message = countdown > 0 
+            ? `Registration successful! Redirecting to login in ${countdown}...`
+            : 'Redirecting to login...';
+          
+          showMessage(message, 'success');
+          
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            window.location.href = 'index.html';
+          }
+          countdown--;
+        }, 1000);
+        
+        // Reset form with animation
+        signupForm.reset();
+        signupForm.style.transform = 'scale(0.98)';
+        
+        // Animate back to normal size
+        setTimeout(() => {
+          signupForm.style.transform = 'scale(1)';
+        }, 200);
+      }
 
     } catch (error) {
       signupBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Registration Failed';
