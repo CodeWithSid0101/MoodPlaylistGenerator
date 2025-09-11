@@ -251,32 +251,31 @@ app.use(hpp({
 // Compress all responses
 app.use(compression());
 
+// MIME type mapping
+const mimeTypes = {
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.html': 'text/html',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.eot': 'application/vnd.ms-fontobject'
+};
+
 // Configure static file serving with proper MIME types
 const staticOptions = {
   setHeaders: (res, path) => {
-    // Set proper MIME types
-    if (path.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    } else if (path.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    } else if (path.endsWith('.json')) {
-      res.setHeader('Content-Type', 'application/json');
-    } else if (path.endsWith('.html')) {
-      res.setHeader('Content-Type', 'text/html');
-    } else if (path.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (path.endsWith('.svg')) {
-      res.setHeader('Content-Type', 'image/svg+xml');
-    } else if (path.endsWith('.woff')) {
-      res.setHeader('Content-Type', 'font/woff');
-    } else if (path.endsWith('.woff2')) {
-      res.setHeader('Content-Type', 'font/woff2');
-    } else if (path.endsWith('.ttf')) {
-      res.setHeader('Content-Type', 'font/ttf');
-    } else if (path.endsWith('.eot')) {
-      res.setHeader('Content-Type', 'application/vnd.ms-fontobject');
+    // Set proper MIME type based on file extension
+    const ext = path.substring(path.lastIndexOf('.')).toLowerCase();
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
     }
     
     // Disable caching for development
