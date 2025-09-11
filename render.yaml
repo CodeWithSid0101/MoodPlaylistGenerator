@@ -3,8 +3,8 @@ services:
     name: mood-playlist-generator
     env: node
     plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && node server.js
+    buildCommand: npm install
+    startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
     envVars:
