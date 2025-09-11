@@ -71,9 +71,19 @@ const userSchema = Joi.object({
 });
 
 // Helper functions
-const readUsers = () => {
+const readUsers = async () => {
   try {
-    const data = fs.readFileSync(usersFilePath, 'utf8');
+    await ensureDataDirectory();
+    
+    // Check if file exists first
+    try {
+      await fs.access(usersFilePath);
+    } catch (error) {
+      // File doesn't exist, return empty users
+      return { users: [] };
+    }
+    
+    const data = await fs.readFile(usersFilePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
     console.error('Error reading users file:', error);
@@ -81,9 +91,13 @@ const readUsers = () => {
   }
 };
 
-const writeUsers = (data) => {
+const writeUsers = async (users) => {
   try {
-    fs.writeFileSync(usersFilePath, JSON.stringify(data, null, 2), 'utf8');
+    // Ensure data directory exists
+    await ensureDataDirectory();
+    
+    // Write the users array as an object with a users property
+    await fs.writeFile(usersFilePath, JSON.stringify({ users }, null, 2), 'utf8');
     return true;
   } catch (error) {
     console.error('Error writing users file:', error);
@@ -109,7 +123,9 @@ router.post('/register', async (req, res, next) => {
     const { username, email, password } = value;
     
     // Check if user already exists
-    const { users = [] } = await readUsers();
+    const usersData = await readUsers();
+    const users = usersData.users || [];
+    
     if (users.some(user => user.email === email)) {
       return res.status(400).json({
         status: 'error',
