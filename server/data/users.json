@@ -1,0 +1,11 @@
+{
+  "users": [
+    {
+      "id": "1757480326395",
+      "username": "testuser",
+      "email": "test@example.com",
+      "registeredAt": "2025-09-10T04:58:46.395Z",
+      "status": "approved"
+    }
+  ]
+}
