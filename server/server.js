@@ -104,8 +104,14 @@ app.use(hpp({
 // Compress all responses
 app.use(compression());
 
-// Serving static files
-app.use(express.static(join(__dirname, '../public')));
+// Serving static files from the public directory
+const publicPath = join(__dirname, '../public');
+app.use(express.static(publicPath));
+
+// Serve the main page for the root route
+app.get('/', (req, res) => {
+  res.sendFile(join(publicPath, 'index.html'));
+});
 
 // Test middleware
 app.use((req, res, next) => {
