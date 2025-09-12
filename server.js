@@ -17,6 +17,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Mood Playlist Generator API',
+    status: 'Running',
+    endpoints: [
+      'GET /api/health',
+      'POST /api/generate-playlist'
+    ]
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running!', status: 'OK' });
 });
@@ -55,25 +66,6 @@ app.post('/api/generate-playlist', async (req, res) => {
   }
 });
 
-// Serve static files from React build in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'Mood Playlist Generator API',
-      endpoints: [
-        'GET /api/health',
-        'POST /api/generate-playlist'
-      ]
-    });
-  });
-}
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -94,3 +86,6 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
+// ... existing code...

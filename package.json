@@ -5,11 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "build": "npm install && cd client && npm install && npm run build",
-    "client": "cd client && npm start",
-    "server": "nodemon server.js",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "dev": "nodemon server.js"
   },
   "engines": {
     "node": ">=14.0.0",
@@ -29,8 +25,7 @@
     "music",
     "playlist",
     "mood",
-    "spotify",
-    "react",
+    "api",
     "node"
   ],
   "author": "CodeWithSid0101",
