@@ -1,19 +1,17 @@
-// Change from /api/register to /api/signup
 async function handleSignup(e) {
     e.preventDefault();
     
-    const username = document.getElementById('signupUsername').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
+    const username = document.getElementById('username').value || document.getElementById('signupUsername').value;
+    const email = document.getElementById('email').value || document.getElementById('signupEmail').value;
+    const password = document.getElementById('password').value || document.getElementById('signupPassword').value;
     
-    // Validation
     if (!username || !email || !password) {
         alert('Please fill in all fields');
         return;
     }
     
     try {
-        const response = await fetch('/api/signup', {  // Changed from /api/register
+        const response = await fetch('/api/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
@@ -22,7 +20,7 @@ async function handleSignup(e) {
         const data = await response.json();
         
         if (data.success) {
-            alert('Account created successfully! Please wait for admin approval before logging in.');
+            alert('Account created successfully! Please wait for admin approval.');
             window.location.href = '/login.html';
         } else {
             alert(data.message);
@@ -32,3 +30,6 @@ async function handleSignup(e) {
         alert('Signup failed. Please try again.');
     }
 }
+
+
+// ... existing code...
