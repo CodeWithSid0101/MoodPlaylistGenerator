@@ -22,18 +22,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize
   loadUsers();
   
+  // Make functions globally accessible
+  window.loadUsers = loadUsers;
+  window.loadPendingUsers = loadUsers; // Alias for backward compatibility
+  window.exportUsersToCsv = exportUsersToCsv;
+  window.handleActionClick = handleActionClick;
+  
   // Event listeners
-  refreshBtn.addEventListener('click', loadUsers);
-  exportBtn.addEventListener('click', exportUsersToCsv);
-  statusFilter.addEventListener('change', filterUsers);
-  searchInput.addEventListener('input', filterUsers);
+  if (refreshBtn) refreshBtn.addEventListener('click', loadUsers);
+  if (exportBtn) exportBtn.addEventListener('click', exportUsersToCsv);
+  if (statusFilter) statusFilter.addEventListener('change', filterUsers);
+  if (searchInput) searchInput.addEventListener('input', filterUsers);
   
   // Functions
   async function loadUsers() {
     try {
       showEmptyState('Loading user data...');
       
-      const response = await fetch(`${API_URL}/users`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in first');
+        return;
+      }
+      
+      const response = await fetch(`${API_URL}/admin/pending-users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+});
+
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
@@ -57,14 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const pending = users.filter(user => user.status === 'pending').length;
     const approved = users.filter(user => user.status === 'approved').length;
     
-    totalUsersEl.textContent = total;
-    pendingUsersEl.textContent = pending;
-    approvedUsersEl.textContent = approved;
+    if (totalUsersEl) totalUsersEl.textContent = total;
+    if (pendingUsersEl) pendingUsersEl.textContent = pending;
+    if (approvedUsersEl) approvedUsersEl.textContent = approved;
   }
   
   function filterUsers() {
-    const statusValue = statusFilter.value;
-    const searchValue = searchInput.value.toLowerCase();
+    const statusValue = statusFilter ? statusFilter.value : 'all';
+    const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
     
     filteredUsers = users.filter(user => {
       // Status filter
@@ -86,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function renderUsers() {
+    if (!usersTableBody) return;
+    
     if (filteredUsers.length === 0) {
       showEmptyState('No users match your filters');
       return;
@@ -97,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = document.createElement('tr');
       
       // Format date
-      const date = new Date(user.registeredAt);
+      const date = new Date(user.created_at);
       const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       row.innerHTML = `
@@ -131,93 +150,76 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  async function handleActionClick(e) {
+    const userId = e.target.closest('.action-btn').dataset.id;
+    const action = e.target.closest('.action-btn').dataset.action;
+    
+    if (action === 'approve' || action === 'reject') {
+      await handleUserApproval(userId, action);
+    } else if (action === 'delete') {
+      await handleUserDelete(userId);
+    }
+  }
+  
+  async function handleUserApproval(userId, action) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/approve-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId, action })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification(`User ${action}d successfully`, 'success');
+        loadUsers();
+      } else {
+        showNotification(data.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      showNotification('Error updating user status', 'error');
+    }
+  }
+  
+  async function handleUserDelete(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/delete-user/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification('User deleted successfully', 'success');
+        loadUsers();
+      } else {
+        showNotification(data.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showNotification('Error deleting user', 'error');
+    }
+  }
+  
   function showEmptyState(message) {
+    if (!usersTableBody) return;
     usersTableBody.innerHTML = `
       <tr class="empty-state">
         <td colspan="5">${message}</td>
       </tr>
     `;
-  }
-  
-  async function handleActionClick(e) {
-    const btn = e.currentTarget;
-    const userId = btn.dataset.id;
-    const action = btn.dataset.action;
-    
-    try {
-      let response;
-      let user;
-      
-      // Find the user in our local state for reference
-      const userIndex = users.findIndex(u => u.id === userId);
-      if (userIndex === -1) {
-        throw new Error('User not found in local state');
-      }
-      user = users[userIndex];
-      
-      switch (action) {
-        case 'approve':
-          // Call the API to update user status
-          response = await fetch(`${API_URL}/users/${userId}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'approved' })
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to approve user: ${response.statusText}`);
-          }
-          
-          const approveResult = await response.json();
-          users[userIndex].status = 'approved';
-          showNotification(`User ${user.username} approved successfully`, 'success');
-          break;
-          
-        case 'reject':
-          // Call the API to update user status
-          response = await fetch(`${API_URL}/users/${userId}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'rejected' })
-          });
-          if (!response.ok) {
-            throw new Error(`Failed to reject user: ${response.statusText}`);
-          }
-          const result = await response.json();
-          users[userIndex].status = 'rejected';
-          showNotification(`User ${user.username} rejected successfully`, 'success');
-          break;
-          
-        case 'delete':
-          // Call the API to delete user
-          response = await fetch(`${API_URL}/users/${userId}`, {
-            method: 'DELETE'
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to delete user: ${response.statusText}`);
-          }
-          
-          users = users.filter(u => u.id !== userId);
-          showNotification(`User ${user.username} deleted successfully`, 'success');
-          break;
-          
-        default:
-          throw new Error('Invalid action');
-      }
-      
-      // Update UI
-      updateStats();
-      filterUsers();
-      
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      showNotification(`Failed to ${action} user: ${error.message}`, 'error');
-    }
   }
   
   function exportUsersToCsv() {
@@ -227,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const csvRows = [
         headers.join(','),
         ...filteredUsers.map(user => {
-          const date = new Date(user.registeredAt).toISOString().split('T')[0];
+          const date = new Date(user.created_at).toISOString().split('T')[0];
           return [
             `"${user.username}"`,
             `"${user.email}"`,
@@ -261,17 +263,26 @@ document.addEventListener('DOMContentLoaded', () => {
   
   function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `admin-notification ${type}`;
-    
-    // Show notification
-    setTimeout(() => {
-      notification.classList.add('show');
-    }, 10);
-    
-    // Hide notification after 3 seconds
-    setTimeout(() => {
-      notification.classList.remove('show');
-    }, 3000);
+    if (notification) {
+      notification.textContent = message;
+      notification.className = `admin-notification ${type}`;
+      
+      // Show notification
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 10);
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    } else {
+      // Fallback to alert if notification element doesn't exist
+      if (type === 'error') {
+        alert('Error: ' + message);
+      } else {
+        alert(message);
+      }
+    }
   }
 });
