@@ -1,11 +1,10 @@
 services:
   - type: web
     name: spotify-playlist-generator
-    runtime: node
+    env: node
     plan: free
-    rootDir: .
-    buildCommand: ./build.sh
-    startCommand: npm start
+    buildCommand: npm install
+    startCommand: node server.js
     healthCheckPath: /health
     autoDeploy: true
     envVars:
