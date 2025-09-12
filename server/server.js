@@ -16,7 +16,7 @@ const adminRoutes = require('./routes/admin-routes.js');
 // Load environment variables
 dotenv.config();
 
-const __dirname = path.dirname(__filename);
+// __dirname is already available in CommonJS, no need to declare it
 
 const app = express();
 const PORT = process.env.PORT || 3000;
