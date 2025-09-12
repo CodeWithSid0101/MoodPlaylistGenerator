@@ -1,15 +1,17 @@
 services:
   - type: web
-    name: spotify-playlist-generator
+    name: mood-playlist-generator
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: node server.js
-    healthCheckPath: /health
+    startCommand: npm start
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        generateValue: true
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_URI
@@ -24,5 +26,3 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-
-
