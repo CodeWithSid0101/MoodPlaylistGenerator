@@ -1,79 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mood Playlist Generator - Sign Up</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Mood Playlist Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .signup-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .signup-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .signup-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .signup-header p {
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .signup-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .signup-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .signup-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #ffeaea;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success-message {
+            color: #27ae60;
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #eafaf1;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .password-strength {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .strength-weak { color: #e74c3c; }
+        .strength-medium { color: #f39c12; }
+        .strength-strong { color: #27ae60; }
+    </style>
 </head>
 <body>
-  <div class="music-notes">
-    <span class="note">&#9835;</span>
-    <span class="note">&#9833;</span>
-    <span class="note">&#9834;</span>
-    <span class="note">&#9836;</span>
-    <span class="note">&#9835;</span>
-    <span class="note">&#9833;</span>
-  </div>
-  
-  <div class="container">
-    <div class="logo-container">
-      <div class="logo-circle">
-        <i class="fas fa-user-plus"></i>
-      </div>
+    <div class="signup-container">
+        <div class="signup-header">
+            <h1>🎵 Join Us</h1>
+            <p>Create your mood playlist account</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required minlength="3">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+                <div class="password-strength" id="passwordStrength"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">Account Type</label>
+                <select id="role" name="role">
+                    <option value="user">Regular User</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="signup-btn" id="signupBtn">Create Account</button>
+        </form>
+        
+        <div class="login-link">
+            <p>Already have an account? <a href="/login">Sign in here</a></p>
+        </div>
     </div>
-    <h1>Sign Up for Developer Access</h1>
-    <p class="subtitle">Register to be added to the Spotify Developer Dashboard for this app</p>
-    
-    <form id="signup-form" class="signup-form">
-      <div class="form-group">
-        <label for="username"><i class="fas fa-user"></i> Username</label>
-        <input type="text" id="username" name="username" placeholder="Enter your username" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="email"><i class="fas fa-envelope"></i> Email</label>
-        <input type="email" id="email" name="email" placeholder="Enter your email address" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="password"><i class="fas fa-lock"></i> Password</label>
-        <input type="password" id="password" name="password" placeholder="Create a password (min 6 characters)" minlength="6" required>
-      </div>
-      
-      <button type="submit" id="signup-btn" class="signup-btn">
-        <i class="fas fa-paper-plane"></i> Submit Registration
-      </button>
-    </form>
-    
-    <div id="signup-message" class="signup-message"></div>
-    
-    <p class="privacy-note">Your information will be added to the Spotify Developer Dashboard to grant you access to this application</p>
-    
-    <div class="login-link">
-      <p>Already registered? <a href="index.html">Login with Spotify</a></p>
-    </div>
-  </div>
 
-  <script nonce="<%= nonce %>">
-    // Pre-fill email if coming from login page
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        const pendingEmail = localStorage.getItem('pending_email');
-        if (pendingEmail) {
-          const emailInput = document.getElementById('email');
-          if (emailInput) {
-            emailInput.value = pendingEmail;
-            // Remove the pending email from storage
-            localStorage.removeItem('pending_email');
-          }
-        }
-      } catch (error) {
-        console.error('Error in signup page initialization:', error);
-      }
-    });
-  </script>
-  <script nonce="<%= nonce %>" src="/signup.js"></script>
+    <script>
+        // Password strength checker
+        document.getElementById('password').addEventListener('input', (e) => {
+            const password = e.target.value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (password.length === 0) {
+                strengthDiv.textContent = '';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            if (strength <= 2) {
+                strengthDiv.textContent = 'Weak password';
+                strengthDiv.className = 'password-strength strength-weak';
+            } else if (strength <= 3) {
+                strengthDiv.textContent = 'Medium strength';
+                strengthDiv.className = 'password-strength strength-medium';
+            } else {
+                strengthDiv.textContent = 'Strong password';
+                strengthDiv.className = 'password-strength strength-strong';
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const signupBtn = document.getElementById('signupBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            
+            // Reset messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Passwords do not match';
+                errorMessage.style.display = 'block';
+                return;
+            }
+            
+            // Disable button
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Creating Account...';
+            
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: password,
+                role: document.getElementById('role').value
+            };
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store token
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    successMessage.textContent = 'Account created successfully! Redirecting...';
+                    successMessage.style.display = 'block';
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (data.user.role === 'admin') {
+                            window.location.href = '/admin';
+                        } else {
+                            window.location.href = '/';
+                        }
+                    }, 1500);
+                } else {
+                    errorMessage.textContent = data.error || 'Registration failed';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
 </body>
 </html>

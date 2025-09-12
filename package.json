@@ -16,7 +16,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "axios": "^1.4.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
@@ -26,7 +28,8 @@
     "playlist",
     "mood",
     "api",
-    "node"
+    "node",
+    "authentication"
   ],
   "author": "CodeWithSid0101",
   "license": "MIT"
