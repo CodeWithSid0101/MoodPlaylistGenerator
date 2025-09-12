@@ -1,8 +1,8 @@
+services:
   - type: web
     name: spotify-playlist-generator
     runtime: node
     plan: free
-    rootDir: ./
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /health
@@ -24,15 +24,5 @@
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-directories:
-  - models/
-  - routes/
-  - middleware/
-  - public/
-  - server/
-files:
-  - server.js
-  - package.json
-  - render.yaml
-  - Procfile
+
 
