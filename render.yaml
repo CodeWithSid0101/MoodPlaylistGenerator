@@ -1,22 +1,26 @@
 services:
   - type: web
-    name: mood-playlist-generator
-    env: node
+    name: spotify-playlist-generator
+    runtime: node
     plan: free
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
       - key: SPOTIFY_CLIENT_ID
-        fromParam: SPOTIFY_CLIENT_ID
+        sync: false
       - key: SPOTIFY_CLIENT_SECRET
-        fromParam: SPOTIFY_CLIENT_SECRET
-      - key: OPENWEATHER_API_KEY
-        fromParam: OPENWEATHER_API_KEY
-      - key: NODE_VERSION
-        value: 20.x
+        sync: false
+      - key: SPOTIFY_REDIRECT_URI
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

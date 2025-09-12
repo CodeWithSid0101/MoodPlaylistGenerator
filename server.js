@@ -203,27 +203,9 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({ error: message });
 });
 
-// Graceful shutdown handlers
-const gracefulShutdown = (signal) => {
-  console.log(`\n${signal} received. Starting graceful shutdown...`);
-  
-  const server = app.listen(PORT, '0.0.0.0');
-  
-  server.close(() => {
-    console.log('HTTP server closed');
-    
-    mongoose.connection.close(false, () => {
-      console.log('MongoDB connection closed');
-      process.exit(0);
-    });
-  });
-  
-  // Force close after 10 seconds
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
-    process.exit(1);
-  }, 10000);
-};
+// Start server
+const PORT = process.env.PORT || 3000;
+let server;
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
@@ -238,11 +220,8 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-
 connectDB().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
+  server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📍 Base URL: ${process.env.APP_URL || `http://localhost:${PORT}`}`);
@@ -251,3 +230,25 @@ connectDB().then(() => {
   console.error('❌ Failed to start server:', error);
   process.exit(1);
 });
+
+// Graceful shutdown handlers
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed');
+      
+      mongoose.connection.close(false, () => {
+        console.log('MongoDB connection closed');
+        process.exit(0);
+      });
+    });
+  }
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
