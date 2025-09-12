@@ -1,99 +1,317 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mood Playlist Generator - Login</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-  <div class="music-notes">
-    <span class="note">&#9835;</span>
-    <span class="note">&#9833;</span>
-    <span class="note">&#9834;</span>
-    <span class="note">&#9836;</span>
-    <span class="note">&#9835;</span>
-    <span class="note">&#9833;</span>
-  </div>
-  
-  <div class="container">
-    <div class="logo-container">
-      <div class="logo-circle">
-        <i class="fas fa-music"></i>
-      </div>
-    </div>
-    <h1>Mood Playlist Generator</h1>
-    <p class="subtitle">Discover music that perfectly matches your mood and create personalized playlists with Spotify</p>
-    
-    <div class="features">
-      <div class="feature">
-        <i class="fas fa-headphones-alt"></i>
-        <span>Access your playlists</span>
-      </div>
-      <div class="feature">
-        <i class="fas fa-compact-disc"></i>
-        <span>Get smart recommendations</span>
-      </div>
-      <div class="feature">
-        <i class="fas fa-smile"></i>
-        <span>Mood-based discovery</span>
-      </div>
-    </div>
-    
-    <div class="login-container">
-      <button id="login" class="login-btn">
-        <span class="btn-content">
-          <i class="fab fa-spotify"></i> Login with Spotify
-        </span>
-        <span class="btn-loader">
-          <i class="fas fa-spinner fa-spin"></i> Connecting...
-        </span>
-      </button>
-      
-      <p class="privacy-note">We access your playlists, top tracks, and music preferences to create personalized mood-based recommendations</p>
-      
-      <div id="auth-error" class="error-message" style="display: none;">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>Authentication failed. Please try again.</p>
-      </div>
-    </div>
-    
-    <div class="login-link">
-      <p>Need developer access? <a href="signup.html">Sign up here</a></p>
-      <p style="margin-top: 15px;">
-        <a href="weather-music.html" style="color: #667eea; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; transition: all 0.3s ease;">
-          <i class="fas fa-cloud-sun"></i> Try Weather-Based Music Discovery
-        </a>
-      </p>
-    </div>
-  </div>
+                                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-  <!-- Email Modal -->
-  <div id="emailModal" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3><i class="fas fa-envelope"></i> Enter Your Email</h3>
-        <button class="modal-close" id="closeModal">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>Please enter your registered email address to continue:</p>
-        <div class="input-group">
-          <i class="fas fa-user"></i>
-          <input type="email" id="emailInput" placeholder="your.email@example.com" autocomplete="email">
-        </div>
-        <div class="modal-actions">
-          <button class="btn-secondary" id="cancelEmail">Cancel</button>
-          <button class="btn-primary" id="confirmEmail">
-            <i class="fas fa-arrow-right"></i> Continue
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+                        <!-- Features -->
+                        <div class="row mt-5">
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card text-center p-4">
+                                    <i class="fas fa-brain fa-3x mb-3 text-primary"></i>
+                                    <h3>AI-Powered</h3>
+                                    <p>Advanced AI algorithms analyze your preferences to create the perfect playlist</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card text-center p-4">
+                                    <i class="fab fa-spotify fa-3x mb-3 text-success"></i>
+                                    <h3>Spotify Integration</h3>
+                                    <p>Seamlessly connect with Spotify and save playlists directly to your account</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card text-center p-4">
+                                    <i class="fas fa-heart fa-3x mb-3 text-danger"></i>
+                                    <h3>Mood-Based</h3>
+                                    <p>Generate playlists based on your current mood and activity</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-  <script src="script.js"></script>
+            <!-- Login Section -->
+            <section id="login-section" class="section">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card shadow">
+                                <div class="card-header text-center">
+                                    <h2>Login</h2>
+                                </div>
+                                <div class="card-body">
+                                    <form id="login-form" novalidate>
+                                        <div class="mb-3">
+                                            <label for="login-email" class="form-label">Email Address</label>
+                                            <input type="email" class="form-control" id="login-email" required>
+                                            <div class="invalid-feedback" id="login-email-error"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="login-password" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="login-password" required>
+                                            <div class="invalid-feedback" id="login-password-error"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                                        </button>
+                                    </form>
+                                    <div class="text-center mt-3">
+                                        <p>Don't have an account? <a href="#" onclick="showSection('register')">Sign up</a></p>
+                                        <p><a href="#" onclick="showSection('admin-login')">Admin Login</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Register Section -->
+            <section id="register-section" class="section">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card shadow">
+                                <div class="card-header text-center">
+                                    <h2>Sign Up</h2>
+                                </div>
+                                <div class="card-body">
+                                    <form id="register-form" novalidate>
+                                        <div class="mb-3">
+                                            <label for="register-name" class="form-label">Full Name</label>
+                                            <input type="text" class="form-control" id="register-name" required>
+                                            <div class="invalid-feedback" id="register-name-error"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="register-email" class="form-label">Email Address</label>
+                                            <input type="email" class="form-control" id="register-email" required>
+                                            <div class="invalid-feedback" id="register-email-error"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="register-password" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="register-password" required minlength="6">
+                                            <div class="form-text">Password must be at least 6 characters long</div>
+                                            <div class="invalid-feedback" id="register-password-error"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="register-confirm-password" class="form-label">Confirm Password</label>
+                                            <input type="password" class="form-control" id="register-confirm-password" required>
+                                            <div class="invalid-feedback" id="register-confirm-password-error"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-user-plus me-2"></i>Sign Up
+                                        </button>
+                                    </form>
+                                    <div class="text-center mt-3">
+                                        <p>Already have an account? <a href="#" onclick="showSection('login')">Login</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Login Section -->
+            <section id="admin-login-section" class="section">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card shadow border-warning">
+                                <div class="card-header text-center bg-warning">
+                                    <h2>Admin Login</h2>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        This area is restricted to administrators only.
+                                    </div>
+                                    <form id="admin-login-form" novalidate>
+                                        <div class="mb-3">
+                                            <label for="admin-email" class="form-label">Admin Email</label>
+                                            <input type="email" class="form-control" id="admin-email" required>
+                                            <div class="invalid-feedback" id="admin-email-error"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="admin-password" class="form-label">Admin Password</label>
+                                            <input type="password" class="form-control" id="admin-password" required>
+                                            <div class="invalid-feedback" id="admin-password-error"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-warning w-100">
+                                            <i class="fas fa-shield-alt me-2"></i>Admin Login
+                                        </button>
+                                    </form>
+                                    <div class="text-center mt-3">
+                                        <p><a href="#" onclick="showSection('login')">Back to User Login</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="section">
+                <div class="container-fluid">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+                        </div>
+                    </div>
+
+                    <!-- Spotify Connection Status -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div id="spotify-status" class="alert alert-warning">
+                                <i class="fab fa-spotify me-2"></i>
+                                Connect your Spotify account to start generating playlists
+                                <button class="btn btn-success btn-sm ms-3" onclick="connectSpotify()">
+                                    Connect Spotify
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create Playlist Form -->
+                    <div class="row mb-4">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title mb-0">
+                                        <i class="fas fa-plus me-2"></i>Create New Playlist
+                                    </h2>
+                                </div>
+                                <div class="card-body">
+                                    <form id="create-playlist-form" novalidate>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="playlist-name" class="form-label">Playlist Name</label>
+                                                <input type="text" class="form-control" id="playlist-name" required maxlength="100">
+                                                <div class="invalid-feedback" id="playlist-name-error"></div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="playlist-mood" class="form-label">Mood</label>
+                                                <select class="form-select" id="playlist-mood">
+                                                    <option value="custom">Custom</option>
+                                                    <option value="happy">Happy</option>
+                                                    <option value="sad">Sad</option>
+                                                    <option value="energetic">Energetic</option>
+                                                    <option value="chill">Chill</option>
+                                                    <option value="romantic">Romantic</option>
+                                                    <option value="party">Party</option>
+                                                    <option value="workout">Workout</option>
+                                                    <option value="focus">Focus</option>
+                                                    <option value="sleep">Sleep</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="playlist-prompt" class="form-label">Describe your perfect playlist</label>
+                                            <textarea class="form-control" id="playlist-prompt" rows="3" 
+                                                placeholder="E.g., Upbeat songs for my morning workout, chill indie tracks for studying, etc." 
+                                                required maxlength="500"></textarea>
+                                            <div class="form-text">Be descriptive! The more details you provide, the better your playlist will be.</div>
+                                            <div class="invalid-feedback" id="playlist-prompt-error"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="playlist-length" class="form-label">Number of Songs</label>
+                                                <input type="number" class="form-control" id="playlist-length" value="20" min="5" max="100">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="playlist-genres" class="form-label">Genres (optional)</label>
+                                                <input type="text" class="form-control" id="playlist-genres" 
+                                                    placeholder="pop, rock, jazz">
+                                                <div class="form-text">Comma separated</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="form-check mt-4">
+                                                    <input class="form-check-input" type="checkbox" id="playlist-public">
+                                                    <label class="form-check-label" for="playlist-public">
+                                                        Make playlist public
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-magic me-2"></i>Create Playlist
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- User Stats -->
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title mb-0">Your Stats</h3>
+                                </div>
+                                <div class="card-body" id="user-stats">
+                                    <div class="d-flex justify-content-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading stats...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Playlists -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h3 class="card-title mb-0">Your Playlists</h3>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="loadUserPlaylists()">
+                                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="playlists-container" class="row">
+                                        <div class="col-12 text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading playlists...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Section -->
+            <section id="admin-section" class="section">
+                <div class="container-fluid">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1><i class="fas fa-shield-alt me-2"></i>Admin Dashboard</h1>
+                        </div>
+                    </div>
+
+                    <div id="admin-content">
+                        <div class="d-flex justify-content-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading admin data...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
