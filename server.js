@@ -15,7 +15,7 @@ let playlists = [];
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
+    ? ['https://moodplaylistgenerator-wrzn.onrender.com']  // Fixed: Use your actual domain
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
@@ -50,9 +50,12 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// REMOVED: This line causes the module error
+// app.use('/api/admin', require('./routes/admin'));
+
 // Routes
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Mood Playlist Generator API',
     status: 'Running',
     endpoints: [
@@ -144,7 +147,7 @@ app.post('/api/signup', async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+        
     // Create user with pending status
     const newUser = {
       id: users.length + 1,
@@ -153,7 +156,7 @@ app.post('/api/signup', async (req, res) => {
       password: hashedPassword,
       role: 'user',
       status: 'pending',
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()  // Fixed: Use created_at for consistency
     };
 
     users.push(newUser);
@@ -163,6 +166,7 @@ app.post('/api/signup', async (req, res) => {
       userId: newUser.id 
     });
   } catch (error) {
+    console.error('Signup error:', error);
     res.status(500).json({ success: false, message: 'Signup failed' });
   }
 });
@@ -205,13 +209,13 @@ app.post('/api/login', async (req, res) => {
     res.json({ 
       success: true, 
       token, 
-      user: { 
-        id: user.id, 
-        username: user.username, 
+      user: {
+        id: user.id,
+        username: user.username,
         email: user.email,
-        role: user.role 
-      } 
-  });
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Login failed' });
@@ -234,7 +238,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/generate-playlist', authenticateToken, async (req, res) => {
   try {
     const { mood, genre, duration } = req.body;
-    
+        
     if (!mood) {
       return res.status(400).json({ error: 'Mood is required' });
     }
@@ -256,8 +260,8 @@ app.post('/api/generate-playlist', authenticateToken, async (req, res) => {
           artist: "Vibe Creator", 
           duration: "4:15"
         }
-      ],
-        createdAt: new Date().toISOString()
+      ], 
+      createdAt: new Date().toISOString()
     };
 
     playlists.push(playlist);
@@ -297,7 +301,7 @@ app.get('/admin/users', authenticateToken, requireAdmin, (req, res) => {
 app.delete('/admin/users/:id', authenticateToken, requireAdmin, (req, res) => {
   const userId = parseInt(req.params.id);
   const userIndex = users.findIndex(u => u.id === userId);
-  
+    
   if (userIndex === -1) {
     return res.status(404).json({ error: 'User not found' });
   }
@@ -314,14 +318,15 @@ app.get('/api/admin/pending-users', authenticateToken, async (req, res) => {
     if (!user || user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
-    
+        
     const pendingUsers = users
       .filter(u => u.status === 'pending')
       .map(({ password, ...user }) => user)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));  // Fixed: Use created_at
+        
     res.json({ success: true, users: pendingUsers });
   } catch (error) {
+    console.error('Error fetching pending users:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch pending users' });
   }
 });
@@ -330,6 +335,35 @@ app.get('/api/admin/pending-users', authenticateToken, async (req, res) => {
 app.post('/api/admin/approve-user', authenticateToken, async (req, res) => {
   try {
     const { userId, action } = req.body; // action: 'approve' or 'reject'
+        
+    // Check if user is admin
+    const adminUser = users.find(u => u.id === req.userId);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+        
+    const userIndex = users.findIndex(u => u.id === parseInt(userId));  // Fixed: Parse userId
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+        
+    const status = action === 'approve' ? 'approved' : 'rejected';
+        
+    users[userIndex].status = status;
+    users[userIndex].approvedBy = req.userId;
+    users[userIndex].approvedAt = new Date().toISOString();
+        
+    res.json({ success: true, message: `User ${status} successfully` });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ success: false, message: 'Failed to update user status' });
+  }
+});
+
+// Delete user endpoint for admin
+app.delete('/api/admin/delete-user/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
     
     // Check if user is admin
     const adminUser = users.find(u => u.id === req.userId);
@@ -337,20 +371,16 @@ app.post('/api/admin/approve-user', authenticateToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
     
-    const userIndex = users.findIndex(u => u.id === userId);
+    const userIndex = users.findIndex(u => u.id === parseInt(userId));
     if (userIndex === -1) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    const status = action === 'approve' ? 'approved' : 'rejected';
-    
-    users[userIndex].status = status;
-    users[userIndex].approvedBy = req.userId;
-    users[userIndex].approvedAt = new Date().toISOString();
-    
-    res.json({ success: true, message: `User ${status} successfully` });
+    users.splice(userIndex, 1);
+    res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update user status' });
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 });
 
@@ -358,19 +388,19 @@ app.post('/api/admin/approve-user', authenticateToken, async (req, res) => {
 app.get('/auth/spotify', authenticateToken, async (req, res) => {
   try {
     const user = users.find(u => u.id === req.userId);
-    
+        
     if (!user || user.status !== 'approved') {
       return res.status(403).json({ 
         success: false, 
         message: 'Your account must be approved before accessing Spotify features' 
       });
     }
-    
+        
     // Proceed with Spotify authorization
     const client_id = process.env.SPOTIFY_CLIENT_ID;
     const redirect_uri = process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:5000/auth/spotify/callback';
     const scopes = 'user-read-private user-read-email playlist-read-private playlist-read-collaborative';
-    
+        
     res.redirect('https://accounts.spotify.com/authorize' +
       '?response_type=code' +
       '&client_id=' + client_id +
@@ -390,8 +420,9 @@ app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
+// Fixed: Admin route redirects properly
 app.get('/admin', authenticateToken, requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  res.redirect('/admin.html');
 });
 
 // Error handling middleware
@@ -408,10 +439,11 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Fixed: Complete the app.listen function
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  
+    
   // Create default admin user
   if (users.length === 0) {
     bcrypt.hash('admin123', 10).then(hash => {
@@ -422,7 +454,7 @@ app.listen(PORT, () => {
         password: hash,
         role: 'admin',
         status: 'approved',
-        createdAt: new Date().toISOString()
+        created_at: new Date().toISOString()
       });
       console.log('Default admin user created - Email: admin@moodplaylist.com, Password: admin123');
     });
