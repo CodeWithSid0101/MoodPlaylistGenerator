@@ -50,6 +50,9 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// Make sure you have this line
+app.use('/api/admin', require('./routes/admin'));
+
 // Routes
 app.get('/', (req, res) => {
   res.json({ 

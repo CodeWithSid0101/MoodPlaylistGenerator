@@ -5,7 +5,7 @@ const Playlist = require('../models/Playlist');
 const { adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
-
+const app = express();
 // Get dashboard stats
 router.get('/stats', adminAuth, async (req, res) => {
   try {
@@ -72,11 +72,48 @@ router.get('/stats', adminAuth, async (req, res) => {
   }
 });
 
+// Get pending users
+router.get('/pending-users', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find({ status: 'pending' })
+        .sort({ createdAt: -1 })
+      .select('name email createdAt status');
+    
+    res.json({ success: true, users: users });
+  } catch (error) {
+    console.error('Fetch pending users error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch users' });
+  }
+});
+
+// Approve or reject user
+router.post('/approve-user', adminAuth, async (req, res) => {
+  try {
+    const { userId, action } = req.body;
+    
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.status = status;
+    user.approvedBy = req.userId;
+    user.approvedAt = new Date();
+    await user.save();
+
+    res.json({ success: true, message: `User ${status} successfully` });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ success: false, message: 'Failed to update user status' });
+  }
+});
+
 // Get all users with pagination
 router.get('/users', adminAuth, async (req, res) => {
   try {
     const { page = 1, limit = 20, search, status } = req.query;
-    
     const query = {};
     
     if (search?.trim()) {
@@ -131,7 +168,7 @@ router.get('/users/:id', adminAuth, async (req, res) => {
         select: 'name prompt mood generationStatus actualLength createdAt isPublic',
         options: { sort: { createdAt: -1 } }
       });
-
+    
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -146,7 +183,7 @@ router.get('/users/:id', adminAuth, async (req, res) => {
           totalTracks: { $sum: '$actualLength' },
           publicPlaylists: {
             $sum: { $cond: ['$isPublic', 1, 0] }
-          },
+      },
           completedPlaylists: {
             $sum: { $cond: [{ $eq: ['$generationStatus', 'completed'] }, 1, 0] }
           }
@@ -174,7 +211,7 @@ router.get('/users/:id', adminAuth, async (req, res) => {
     
     if (error.name === 'CastError') {
       return res.status(400).json({ error: 'Invalid user ID' });
-    }
+  }
     
     res.status(500).json({ error: 'Failed to fetch user details' });
   }
@@ -219,7 +256,7 @@ router.put('/users/:id/status', adminAuth, async (req, res) => {
   }
 });
 
-// Delete user (soft delete by deactivating)
+// Delete user
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -250,6 +287,30 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to deactivate user' });
+  }
+});
+
+// Delete user (hard delete)
+router.delete('/delete-user/:userId', adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isAdmin) {
+      return res.status(400).json({ success: false, message: 'Cannot delete admin users' });
+    }
+    
+    await User.findByIdAndDelete(userId);
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 });
 
