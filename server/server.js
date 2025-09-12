@@ -1,23 +1,21 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import compression from 'compression';
-import rateLimit from 'express-rate-limit';
-import cookieParser from 'cookie-parser';
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const dotenv = require('dotenv');
+const path = require('path');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 
 // Import routes
-import weatherRoutes from './routes/weather.js';
-import usersRoutes from './routes/users.js';
-import adminRoutes from './routes/admin-routes.js';
+const weatherRoutes = require('./routes/weather.js');
+const usersRoutes = require('./routes/users.js');
+const adminRoutes = require('./routes/admin-routes.js');
 
 // Load environment variables
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
@@ -302,4 +300,4 @@ app.listen(PORT, () => {
   console.log(`Static files served from: ${publicPath}`);
 });
 
-export default app;
+module.exports = app;

@@ -2,7 +2,7 @@
   "name": "mood-playlist-generator",
   "version": "1.0.0",
   "description": "Server for MoodPlaylistGenerator with weather and music integration",
-  "main": "./server.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
