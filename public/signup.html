@@ -140,37 +140,11 @@
         <div class="error-message" id="errorMessage"></div>
         <div class="success-message" id="successMessage"></div>
         
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required minlength="3">
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required minlength="6">
-                <div class="password-strength" id="passwordStrength"></div>
-            </div>
-            
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="role">Account Type</label>
-                <select id="role" name="role">
-                    <option value="user">Regular User</option>
-                    <option value="admin">Administrator</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="signup-btn" id="signupBtn">Create Account</button>
+        <form onsubmit="handleSignup(event)">
+            <input type="text" id="signupUsername" name="username" placeholder="Username" required>
+            <input type="email" id="signupEmail" name="email" placeholder="Email" required>
+            <input type="password" id="signupPassword" name="password" placeholder="Password" required>
+            <button type="submit">Sign Up</button>
         </form>
         
         <div class="login-link">
@@ -179,39 +153,8 @@
     </div>
 
     <script>
-        // Password strength checker
-        document.getElementById('password').addEventListener('input', (e) => {
-            const password = e.target.value;
-            const strengthDiv = document.getElementById('passwordStrength');
-            
-            if (password.length === 0) {
-                strengthDiv.textContent = '';
-                return;
-            }
-            
-            let strength = 0;
-            if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password)) strength++;
-            if (/[A-Z]/.test(password)) strength++;
-            if (/[0-9]/.test(password)) strength++;
-            if (/[^A-Za-z0-9]/.test(password)) strength++;
-            
-            if (strength <= 2) {
-                strengthDiv.textContent = 'Weak password';
-                strengthDiv.className = 'password-strength strength-weak';
-            } else if (strength <= 3) {
-                strengthDiv.textContent = 'Medium strength';
-                strengthDiv.className = 'password-strength strength-medium';
-            } else {
-                strengthDiv.textContent = 'Strong password';
-                strengthDiv.className = 'password-strength strength-strong';
-            }
-        });
-
-        document.getElementById('signupForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const signupBtn = document.getElementById('signupBtn');
+        function handleSignup(event) {
+            event.preventDefault();
             const errorMessage = document.getElementById('errorMessage');
             const successMessage = document.getElementById('successMessage');
             
@@ -219,46 +162,29 @@
             errorMessage.style.display = 'none';
             successMessage.style.display = 'none';
             
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            if (password !== confirmPassword) {
-                errorMessage.textContent = 'Passwords do not match';
-                errorMessage.style.display = 'block';
-                return;
-            }
-            
-            // Disable button
-            signupBtn.disabled = true;
-            signupBtn.textContent = 'Creating Account...';
-            
             const formData = {
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: password,
-                role: document.getElementById('role').value
+                username: document.getElementById('signupUsername').value,
+                email: document.getElementById('signupEmail').value,
+                password: document.getElementById('signupPassword').value,
+                role: 'user'
             };
             
-            try {
-                const response = await fetch('/api/register', {
+            fetch('/api/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(formData)
-                });
-                
-                const data = await response.json();
-                
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
-                    // Store token
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     
                     successMessage.textContent = 'Account created successfully! Redirecting...';
                     successMessage.style.display = 'block';
                     
-                    // Redirect based on role
                     setTimeout(() => {
                         if (data.user.role === 'admin') {
                             window.location.href = '/admin';
@@ -270,14 +196,12 @@
                     errorMessage.textContent = data.error || 'Registration failed';
                     errorMessage.style.display = 'block';
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 errorMessage.textContent = 'Network error. Please try again.';
                 errorMessage.style.display = 'block';
-            } finally {
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Create Account';
-            }
         });
+        }
     </script>
 </body>
 </html>
