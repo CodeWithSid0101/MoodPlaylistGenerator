@@ -4,8 +4,8 @@
   "description": "Server for MoodPlaylistGenerator with weather and music integration",
   "main": "server.js",
   "scripts": {
-    "start": "cd .. && node server.js",
-    "dev": "cd .. && nodemon server.js",
+    "start": "echo 'This is not the main server - use root package.json'",
+    "dev": "echo 'This is not the main server - use root package.json'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
