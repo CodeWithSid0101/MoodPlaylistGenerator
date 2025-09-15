@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather-Based Music - Mood Playlist Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .weather-music-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .weather-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+      animation: slideInLeft 0.8s ease;
+    }
+
+    .weather-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .weather-icon {
+      font-size: 4rem;
+      color: #667eea;
+    }
+
+    .weather-details h2 {
+      color: #fff;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .weather-details p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.1rem;
+      margin: 5px 0;
+    }
+
+    .mood-indicator {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      display: inline-block;
+      font-weight: 600;
+      margin: 10px 0;
+    }
+
+    .city-input-section {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .city-input-group {
+      display: flex;
+      gap: 15px;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    .city-input {
+      flex: 1;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .city-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .city-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .get-weather-btn {
+      padding: 15px 25px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .get-weather-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .tracks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .track-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      animation: bounceIn 0.6s ease;
+    }
+
+    .track-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .track-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .track-info h3 {
+      color: #fff;
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .track-info p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .track-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .play-btn, .spotify-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .play-btn {
+      background: rgba(29, 185, 84, 0.8);
+      color: white;
+    }
+
+    .spotify-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.1rem;
+      margin: 40px 0;
+    }
+
+    .loading i {
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    .error {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      color: #ff6b6b;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(-5px);
+    }
+
+    @media (max-width: 768px) {
+      .weather-info {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .city-input-group {
+        flex-direction: column;
+      }
+
+      .tracks-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">
+    <i class="fas fa-arrow-left"></i> Back to Home
+  </a>
+
+  <div class="weather-music-container">
+    <div class="city-input-section">
+      <h1 style="color: white; margin-bottom: 20px;">
+        <i class="fas fa-cloud-sun"></i> Weather-Based Music Discovery
+      </h1>
+      <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;" id="mainDescription">
+        Detecting your location to generate personalized music recommendations...
+      </p>
+      
+      <div class="location-buttons" id="locationButtons" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+        <button class="get-weather-btn" id="autoDetectBtn">
+          <i class="fas fa-location-arrow"></i> Use My Location
+        </button>
+        <button class="get-weather-btn" id="manualLocationBtn" style="background: rgba(255, 255, 255, 0.1);">
+          <i class="fas fa-edit"></i> Enter City Manually
+        </button>
+      </div>
+      
+      <div class="city-input-group" id="cityInputGroup" style="display: none;">
+        <input type="text" class="city-input" id="cityInput" placeholder="Enter your city name..." />
+        <button class="get-weather-btn" id="getWeatherBtn">
+          <i class="fas fa-search"></i> Get Music
+        </button>
+      </div>
+    </div>
+
+    <div id="weatherCard" class="weather-card" style="display: none;">
+      <div class="weather-info">
+        <div class="weather-icon" id="weatherIcon">
+          <i class="fas fa-sun"></i>
+        </div>
+        <div class="weather-details">
+          <h2 id="cityName">Loading...</h2>
+          <p id="temperature">--°C</p>
+          <p id="description">Loading weather...</p>
+          <div class="weather-stats">
+            <span><i class="fas fa-tint"></i> <span id="humidity">--%</span></span>
+            <span><i class="fas fa-wind"></i> <span id="windSpeed">-- m/s</span></span>
+          </div>
+          <div class="mood-indicator" id="moodIndicator">
+            <span id="moodIcon"><i class="fas fa-smile"></i></span> 
+            <span id="moodText">Analyzing mood...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loadingSection" class="loading" style="display: none;">
+      <i class="fas fa-spinner"></i> Finding perfect music for your weather...
+    </div>
+
+    <div id="errorSection" class="error" style="display: none;">
+      <i class="fas fa-exclamation-triangle"></i> <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div id="tracksSection">
+      <div class="tracks-grid" id="tracksGrid">
+        <!-- Tracks will be populated here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cityInput = document.getElementById('cityInput');
+    const getWeatherBtn = document.getElementById('getWeatherBtn');
+    const autoDetectBtn = document.getElementById('autoDetectBtn');
+    const manualLocationBtn = document.getElementById('manualLocationBtn');
+    const cityInputGroup = document.getElementById('cityInputGroup');
+    const locationButtons = document.getElementById('locationButtons');
+    const mainDescription = document.getElementById('mainDescription');
+    const weatherCard = document.getElementById('weatherCard');
+    const loadingSection = document.getElementById('loadingSection');
+    const errorSection = document.getElementById('errorSection');
+    const tracksGrid = document.getElementById('tracksGrid');
+
+    // Weather icon mapping
+    const weatherIcons = {
+      '01d': 'fas fa-sun',
+      '01n': 'fas fa-moon',
+      '02d': 'fas fa-cloud-sun',
+      '02n': 'fas fa-cloud-moon',
+      '03d': 'fas fa-cloud',
+      '03n': 'fas fa-cloud',
+      '04d': 'fas fa-cloud',
+      '04n': 'fas fa-cloud',
+      '09d': 'fas fa-cloud-rain',
+      '09n': 'fas fa-cloud-rain',
+      '10d': 'fas fa-cloud-sun-rain',
+      '10n': 'fas fa-cloud-moon-rain',
+      '11d': 'fas fa-bolt',
+      '11n': 'fas fa-bolt',
+      '13d': 'fas fa-snowflake',
+      '13n': 'fas fa-snowflake',
+      '50d': 'fas fa-smog',
+      '50n': 'fas fa-smog'
+    };
+
+    // Mood icons
+    const moodIcons = {
+      'happy': 'fas fa-laugh-beam',
+      'relaxed': 'fas fa-smile',
+      'contemplative': 'fas fa-meh',
+      'mellow': 'fas fa-meh-rolling-eyes',
+      'cozy': 'fas fa-heart',
+      'melancholic': 'fas fa-sad-tear',
+      'intense': 'fas fa-fire',
+      'peaceful': 'fas fa-dove',
+      'dreamy': 'fas fa-cloud'
+    };
+
+    getWeatherBtn.addEventListener('click', getWeatherMusic);
+    autoDetectBtn.addEventListener('click', detectLocationAndGetMusic);
+    manualLocationBtn.addEventListener('click', showManualInput);
+    
+    cityInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        getWeatherMusic();
+      }
+    });
+
+    // Auto-detect location on page load
+    window.addEventListener('load', () => {
+      detectLocationAndGetMusic();
+    });
+
+    async function detectLocationAndGetMusic() {
+      if (!navigator.geolocation) {
+        showError('Geolocation is not supported by this browser');
+        showManualInput();
+        return;
+      }
+
+      showLoading();
+      hideError();
+      tracksGrid.innerHTML = '';
+      
+      mainDescription.textContent = 'Detecting your location...';
+      autoDetectBtn.disabled = true;
+      autoDetectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            mainDescription.textContent = 'Getting weather and music for your location...';
+            
+            const response = await fetch(`/api/weather-music-coords/${latitude}/${longitude}`);
+            const data = await response.json();
+
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to fetch weather data');
+            }
+
+            displayWeatherInfo(data.weather, data.mood, true);
+            displayTracks(data.tracks);
+            hideLoading();
+            
+            // Hide location buttons and show success message
+            locationButtons.style.display = 'none';
+            mainDescription.innerHTML = `
+              <i class="fas fa-map-marker-alt" style="color: #4ade80;"></i> 
+              Auto-detected your location: <strong>${data.weather.city}, ${data.weather.country}</strong>
+              <br><small style="opacity: 0.7;">Music recommendations based on current weather conditions</small>
+            `;
+
+          } catch (error) {
+            console.error('Error:', error);
+            showError(error.message || 'Failed to fetch weather-based music recommendations');
+            hideLoading();
+            showManualInput();
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          let errorMessage = 'Unable to detect your location. ';
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += 'Please allow location access or enter your city manually.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage += 'Location request timed out.';
+              break;
+            default:
+              errorMessage += 'An unknown error occurred.';
+              break;
+          }
+          
+          showError(errorMessage);
+          hideLoading();
+          showManualInput();
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    }
+
+    function showManualInput() {
+      locationButtons.style.display = 'none';
+      cityInputGroup.style.display = 'flex';
+      mainDescription.textContent = 'Enter your city to get music recommendations based on current weather conditions';
+      
+      // Reset button state
+      autoDetectBtn.disabled = false;
+      autoDetectBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Location';
+      
+      // Add back button
+      const backBtn = document.createElement('button');
+      backBtn.className = 'get-weather-btn';
+      backBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Auto-detect';
+      backBtn.onclick = () => {
+        cityInputGroup.style.display = 'none';
+        locationButtons.style.display = 'flex';
+        mainDescription.textContent = 'Choose how you want to get your music recommendations';
+        backBtn.remove();
+      };
+      
+      cityInputGroup.appendChild(backBtn);
+    }
+
+    async function getWeatherMusic() {
+      const city = cityInput.value.trim();
+      if (!city) {
+        showError('Please enter a city name');
+        return;
+      }
+
+      showLoading();
+      hideError();
+      tracksGrid.innerHTML = '';
+
+      try {
+        const response = await fetch(`/api/weather-music/${encodeURIComponent(city)}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch weather data');
+        }
+
+        displayWeatherInfo(data.weather, data.mood, false);
+        displayTracks(data.tracks);
+        hideLoading();
+
+      } catch (error) {
+        console.error('Error:', error);
+        showError(error.message || 'Failed to fetch weather-based music recommendations');
+        hideLoading();
+      }
+    }
+
+    function displayWeatherInfo(weather, mood, isAutoDetected = false) {
+      document.getElementById('weatherIcon').innerHTML = `<i class="${weatherIcons[weather.icon] || 'fas fa-cloud'}"></i>`;
+      document.getElementById('cityName').textContent = `${weather.city}, ${weather.country}`;
+      document.getElementById('temperature').textContent = `${weather.temperature}°C`;
+      document.getElementById('description').textContent = weather.description;
+      document.getElementById('humidity').textContent = `${weather.humidity}%`;
+      document.getElementById('windSpeed').textContent = `${weather.windSpeed} m/s`;
+      
+      document.getElementById('moodIcon').innerHTML = `<i class="${moodIcons[mood] || 'fas fa-smile'}"></i>`;
+      document.getElementById('moodText').textContent = mood.charAt(0).toUpperCase() + mood.slice(1);
+      
+      weatherCard.style.display = 'block';
+      
+      // Add location indicator if auto-detected
+      if (isAutoDetected) {
+        const cityNameElement = document.getElementById('cityName');
+        cityNameElement.innerHTML = `
+          <i class="fas fa-map-marker-alt" style="color: #4ade80; margin-right: 5px;"></i>
+          ${weather.city}, ${weather.country}
+        `;
+      }
+    }
+
+    function displayTracks(tracks) {
+      tracksGrid.innerHTML = '';
+      
+      tracks.forEach((track, index) => {
+        const trackCard = document.createElement('div');
+        trackCard.className = 'track-card stagger-item';
+        trackCard.style.animationDelay = `${index * 0.1}s`;
+        
+        trackCard.innerHTML = `
+          <img src="${track.image || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+               alt="${track.name}" class="track-image" />
+          <div class="track-info">
+            <h3>${track.name}</h3>
+            <p><i class="fas fa-user"></i> ${track.artist}</p>
+            <p><i class="fas fa-album"></i> ${track.album}</p>
+          </div>
+          <div class="track-actions">
+            ${track.preview_url ? 
+              `<button class="play-btn" onclick="playPreview('${track.preview_url}')">
+                <i class="fas fa-play"></i> Preview
+              </button>` : 
+              `<button class="play-btn" disabled style="opacity: 0.5;">
+                <i class="fas fa-ban"></i> No Preview
+              </button>`
+            }
+            <a href="${track.external_url}" target="_blank" class="spotify-btn">
+              <i class="fab fa-spotify"></i> Open
+            </a>
+          </div>
+        `;
+        
+        tracksGrid.appendChild(trackCard);
+      });
+    }
+
+    function playPreview(previewUrl) {
+      // Stop any currently playing audio
+      const existingAudio = document.querySelector('audio');
+      if (existingAudio) {
+        existingAudio.pause();
+        existingAudio.remove();
+      }
+
+      // Create and play new audio
+      const audio = new Audio(previewUrl);
+      audio.volume = 0.5;
+      audio.play().catch(e => {
+        console.error('Error playing audio:', e);
+        showError('Unable to play preview');
+      });
+
+      // Remove audio element when finished
+      audio.addEventListener('ended', () => {
+        audio.remove();
+      });
+    }
+
+    function showLoading() {
+      loadingSection.style.display = 'block';
+      getWeatherBtn.disabled = true;
+      getWeatherBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    }
+
+    function hideLoading() {
+      loadingSection.style.display = 'none';
+      getWeatherBtn.disabled = false;
+      getWeatherBtn.innerHTML = '<i class="fas fa-search"></i> Get Music';
+    }
+
+    function showError(message) {
+      document.getElementById('errorMessage').textContent = message;
+      errorSection.style.display = 'block';
+    }
+
+    function hideError() {
+      errorSection.style.display = 'none';
+    }
+
+    // Auto-detect user's location (optional)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          // Skip the reverse geocoding API call to avoid 401 errors
+          cityInput.placeholder = `Enter your city name (e.g., Mumbai, London, New York)...`;
+        } catch (error) {
+          console.log('Could not detect location');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

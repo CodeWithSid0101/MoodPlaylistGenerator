@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Playlist Generator</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="music-notes">
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+    <span class="note">&#9834;</span>
+    <span class="note">&#9836;</span>
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+  </div>
+  
+  <div class="container">
+    <div class="logo-container">
+      <div class="logo-circle pulse">
+        <i class="fas fa-headphones-alt"></i>
+      </div>
+    </div>
+    
+    <h1>Generate Your Mood Playlist</h1>
+    
+    <div id="user-info" class="user-info"></div>
+    
+    <div class="mood-selector">
+      <label for="mood"><i class="fas fa-heart"></i> Choose your mood:</label>
+      <select id="mood">
+        <option value="happy"><i class="fas fa-smile"></i> Happy</option>
+        <option value="sad"><i class="fas fa-sad-tear"></i> Sad</option>
+        <option value="chill"><i class="fas fa-coffee"></i> Chill</option>
+        <option value="angry"><i class="fas fa-angry"></i> Angry</option>
+      </select>
+      <p class="info-note"><i class="fas fa-info-circle"></i> We'll find music from your playlists, top tracks, and listening history that matches your mood</p>
+    </div>
+
+    <button id="generate" class="generate-btn">
+      <i class="fas fa-magic"></i> Generate Playlist
+    </button>
+    
+    <button id="show-liked" class="liked-btn">
+      <i class="fas fa-heart"></i> Show Liked Songs
+    </button>
+
+    <div id="playlist" class="playlist-output"></div>
+    
+    <div class="wave-container">
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+    </div>
+  </div>
+
+  <script src="../script.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Playlist Generator - Admin Dashboard</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="./admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="music-notes">
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+    <span class="note">&#9834;</span>
+    <span class="note">&#9836;</span>
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+  </div>
+  
+  <div class="container admin-container">
+    <div class="logo-container">
+      <div class="logo-circle">
+        <i class="fas fa-user-shield"></i>
+      </div>
+    </div>
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">Manage user registrations for Spotify Developer Dashboard</p>
+    
+    <div class="admin-controls">
+      <button id="refresh-btn" class="admin-btn">
+        <i class="fas fa-sync-alt"></i> Refresh Data
+      </button>
+      <button id="export-btn" class="admin-btn">
+        <i class="fas fa-file-export"></i> Export CSV
+      </button>
+    </div>
+    
+    <div class="user-stats">
+      <div class="stat-card">
+        <h3>Total Users</h3>
+        <p id="total-users">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Pending</h3>
+        <p id="pending-users">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Approved</h3>
+        <p id="approved-users">0</p>
+      </div>
+    </div>
+    
+    <div class="users-table-container">
+      <h2>Registered Users</h2>
+      <div class="table-filters">
+        <select id="status-filter">
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <input type="text" id="search-input" placeholder="Search by name or email...">
+      </div>
+      <table id="users-table" class="users-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Registration Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body">
+          <!-- User data will be populated here -->
+          <tr class="empty-state">
+            <td colspan="5">Loading user data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="notification" class="admin-notification"></div>
+    
+    <div class="admin-footer">
+      <a href="../index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Main Site
+      </a>
+    </div>
+  </div>
+
+  <script src="../admin.js"></script>
+</body>
+</html>

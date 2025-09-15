@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Playlist Generator - Sign Up</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="music-notes">
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+    <span class="note">&#9834;</span>
+    <span class="note">&#9836;</span>
+    <span class="note">&#9835;</span>
+    <span class="note">&#9833;</span>
+  </div>
+  
+  <div class="container">
+    <div class="logo-container">
+      <div class="logo-circle">
+        <i class="fas fa-user-plus"></i>
+      </div>
+    </div>
+    <h1>Sign Up for Developer Access</h1>
+    <p class="subtitle">Register to be added to the Spotify Developer Dashboard for this app</p>
+    
+    <form id="signup-form" class="signup-form">
+      <div class="form-group">
+        <label for="username"><i class="fas fa-user"></i> Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="email"><i class="fas fa-envelope"></i> Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+      </div>
+      
+      <button type="submit" id="signup-btn" class="signup-btn">
+        <i class="fas fa-paper-plane"></i> Submit Registration
+      </button>
+    </form>
+    
+    <div id="signup-message" class="signup-message"></div>
+    
+    <p class="privacy-note">Your information will be added to the Spotify Developer Dashboard to grant you access to this application</p>
+    
+    <div class="login-link">
+      <p>Already registered? <a href="index.html">Login with Spotify</a></p>
+    </div>
+  </div>
+
+  <script src="signup.js"></script>
+</body>
+</html>
