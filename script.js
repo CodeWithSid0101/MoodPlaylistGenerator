@@ -249,72 +249,75 @@ if (window.location.pathname.includes('/callback')) {
         return playable;
       }
 
-      function startShuffle() {
-        const playable = getPlayableTracks();
-        if (!playable.length) {
-          // Fallback: try to shuffle and play on user's active device via Web API
-          startDeviceShufflePlayback().catch(() => {
-            showNotification('No previewable tracks. Open Spotify app and start playback once, then retry Shuffle.', 'error');
-          });
-          return;
-        }
-        const queue = shuffleArray(playable);
-        window._shuffle = { isPlaying: true, queue, index: 0, audio: null };
-        playCurrent();
-        if (shuffleBtn) {
-          shuffleBtn.classList.add('btn-loading');
-          shuffleBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+      // Resolve a 30s preview URL for a track (Spotify preview_url first, then iTunes fallback)
+      async function resolvePreviewUrl(track) {
+        if (track?.preview_url) return track.preview_url;
+        try {
+          const name = (track?.name || '').trim();
+          const artists = (track?.artists || []).map(a => a.name).join(' ').trim();
+          if (!name) return null;
+          const term = encodeURIComponent(`${name} ${artists}`.trim());
+          const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`);
+          if (!res.ok) return null;
+          const data = await res.json();
+          const preview = data?.results?.[0]?.previewUrl || null;
+          return preview || null;
+        } catch {
+          return null;
         }
       }
 
-      async function startDeviceShufflePlayback() {
+      async function buildPreviewQueue() {
+        const tracks = window._currentTracks || window._allTracks || [];
+        const unique = [];
+        const seen = new Set();
+        for (const t of tracks) {
+          if (t?.id && !seen.has(t.id)) { seen.add(t.id); unique.push(t); }
+        }
+        const resolved = [];
+        for (const t of unique) {
+          const preview = await resolvePreviewUrl(t);
+          if (preview) resolved.push({ track: t, previewUrl: preview });
+          if (resolved.length > 50) break;
+        }
+        return resolved;
+      }
+
+      function highlightPlaying(trackId) {
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
+        const el = document.querySelector(`.track-item[data-track-id="${trackId}"]`);
+        if (el) el.classList.add('playing');
+      }
+
+      function clearPlayingHighlight() {
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
+      }
+
+      async function startShuffle() {
         try {
-          const accessToken = localStorage.getItem('spotify_access_token');
-          if (!accessToken) throw new Error('No token');
-
-          // Ensure there is an active device
-          const devicesRes = await fetch('https://api.spotify.com/v1/me/player/devices', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-          if (!devicesRes.ok) throw new Error('devices failed');
-          const devices = await devicesRes.json();
-          const active = (devices.devices || []).find(d => d.is_active) || (devices.devices || [])[0];
-          if (!active) throw new Error('no device');
-
-          // Shuffle on
-          await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=true&device_id=${encodeURIComponent(active.id)}`, {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-
-          // Build URIs from current list
-          const tracks = window._currentTracks || window._allTracks || [];
-          const uris = tracks.map(t => t.uri).filter(Boolean);
-          if (!uris.length) throw new Error('no uris');
-
-          // Start playback with shuffled order (let Spotify handle shuffle)
-          await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(active.id)}`, {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ uris })
-          });
-
-          showNotification('Shuffle started on your active Spotify device.', 'success');
+          const queue = shuffleArray(await buildPreviewQueue());
+          if (!queue.length) {
+            showNotification('No 30s previews found for current list. Try Liked Songs or another mood.', 'error');
+            return;
+          }
+          window._shuffle = { isPlaying: true, queue, index: 0, audio: null };
+          if (shuffleBtn) {
+            shuffleBtn.classList.add('btn-loading');
+            shuffleBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+          }
+          playCurrent();
         } catch (e) {
-          throw e;
+          showNotification('Shuffle failed to start. Please retry.', 'error');
         }
       }
 
       function playCurrent() {
         const state = window._shuffle;
         if (!state || state.isPlaying !== true) return;
-        const track = state.queue[state.index];
+        const { track, previewUrl } = state.queue[state.index];
         try {
           if (state.audio) { try { state.audio.pause(); } catch(_){} }
-          const audio = new Audio(track.preview_url);
+          const audio = new Audio(previewUrl);
           state.audio = audio;
           highlightPlaying(track.id);
           audio.onended = () => { nextShuffle(); };
@@ -343,16 +346,6 @@ if (window.location.pathname.includes('/callback')) {
           shuffleBtn.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
         }
         clearPlayingHighlight();
-      }
-
-      function highlightPlaying(trackId) {
-        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
-        const el = document.querySelector(`.track-item[data-track-id="${trackId}"]`);
-        if (el) el.classList.add('playing');
-      }
-
-      function clearPlayingHighlight() {
-        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
       }
 
       // Add event listener for mood selector to filter songs immediately
