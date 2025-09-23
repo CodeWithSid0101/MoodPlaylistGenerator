@@ -359,21 +359,43 @@ if (window.location.pathname.includes('/callback')) {
       }
 
       function stopShuffle() {
-        const state = window._shuffle;
-        if (state?.audio) {
-          try {
-            state.audio.onended = null;
-            state.audio.onerror = null;
-            state.audio.pause();
-            state.audio.currentTime = 0;
-          } catch(_){ }
+        try {
+          const state = window._shuffle;
+          if (state?.audio) {
+            try {
+              state.isPlaying = false; // guard future handlers
+              state.audio.onended = null;
+              state.audio.onerror = null;
+              state.audio.pause();
+              state.audio.currentTime = 0;
+              // Forcefully unload the media to stop network activity
+              state.audio.src = '';
+              state.audio.load();
+            } catch(_) { }
+          }
+        } finally {
+          // Clear global state entirely
+          window._shuffle = null;
+          // Reset UI
+          const shuffleBtn = document.getElementById('shuffle-play');
+          if (shuffleBtn) {
+            shuffleBtn.classList.remove('btn-loading');
+            shuffleBtn.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
+          }
+          clearPlayingHighlight();
         }
-        window._shuffle = { isPlaying: false, queue: [], index: 0, audio: null };
-        if (shuffleBtn) {
-          shuffleBtn.classList.remove('btn-loading');
-          shuffleBtn.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
-        }
-        clearPlayingHighlight();
+      }
+
+      // Ensure the Shuffle button toggles reliably even after a stop
+      const shuffleBtn = document.getElementById('shuffle-play');
+      if (shuffleBtn) {
+        shuffleBtn.onclick = () => {
+          if (!window._shuffle || window._shuffle.isPlaying !== true) {
+            startShuffle();
+          } else {
+            stopShuffle();
+          }
+        };
       }
 
       // Add event listener for mood selector to filter songs immediately
