@@ -326,6 +326,7 @@ if (window.location.pathname.includes('/callback')) {
           const audio = new Audio(previewUrl);
           audio.preload = 'auto';
           state.audio = audio;
+          window._activeAudio = audio; // global pointer for hard stops
           highlightPlaying(track.id);
           audio.onended = () => {
             const s = window._shuffle;
@@ -337,7 +338,14 @@ if (window.location.pathname.includes('/callback')) {
             if (!s || s.isPlaying !== true) return;
             nextShuffle();
           };
+          // If a stop was requested just before play resolves, guard it
+          const token = Date.now();
+          state._playToken = token;
           audio.play().then(() => {
+            if (!window._shuffle || window._shuffle._playToken !== token || window._shuffle.isPlaying !== true) {
+              try { audio.pause(); } catch(_){}
+              return;
+            }
             showNotification(`▶️ ${track.name} — ${(track.artists||[]).map(a=>a.name).join(', ')}`, 'success');
           }).catch(() => {
             const s = window._shuffle;
@@ -361,28 +369,28 @@ if (window.location.pathname.includes('/callback')) {
       function stopShuffle() {
         try {
           const state = window._shuffle;
-          if (state?.audio) {
+          if (state) state.isPlaying = false; // guard future handlers immediately
+          const audio = (state && state.audio) ? state.audio : window._activeAudio;
+          if (audio) {
             try {
-              state.isPlaying = false; // guard future handlers
-              state.audio.onended = null;
-              state.audio.onerror = null;
-              state.audio.pause();
-              state.audio.currentTime = 0;
-              // Forcefully unload the media to stop network activity
-              state.audio.src = '';
-              state.audio.load();
+              audio.onended = null;
+              audio.onerror = null;
+              audio.pause();
+              audio.currentTime = 0;
+              audio.src = '';
+              audio.load();
             } catch(_) { }
           }
         } finally {
-          // Clear global state entirely
+          window._activeAudio = null;
           window._shuffle = null;
-          // Reset UI
           const shuffleBtnEl = document.getElementById('shuffle-play');
           if (shuffleBtnEl) {
             shuffleBtnEl.classList.remove('btn-loading');
             shuffleBtnEl.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
           }
           clearPlayingHighlight();
+          try { if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; } catch(_){}
         }
       }
 
