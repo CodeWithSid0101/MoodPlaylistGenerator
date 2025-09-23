@@ -377,10 +377,10 @@ if (window.location.pathname.includes('/callback')) {
           // Clear global state entirely
           window._shuffle = null;
           // Reset UI
-          const shuffleBtn = document.getElementById('shuffle-play');
-          if (shuffleBtn) {
-            shuffleBtn.classList.remove('btn-loading');
-            shuffleBtn.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
+          const shuffleBtnEl = document.getElementById('shuffle-play');
+          if (shuffleBtnEl) {
+            shuffleBtnEl.classList.remove('btn-loading');
+            shuffleBtnEl.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
           }
           clearPlayingHighlight();
         }
