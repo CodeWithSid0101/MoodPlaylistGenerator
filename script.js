@@ -316,16 +316,37 @@ if (window.location.pathname.includes('/callback')) {
         if (!state || state.isPlaying !== true) return;
         const { track, previewUrl } = state.queue[state.index];
         try {
-          if (state.audio) { try { state.audio.pause(); } catch(_){} }
+          if (state.audio) {
+            try {
+              state.audio.onended = null;
+              state.audio.onerror = null;
+              state.audio.pause();
+            } catch(_){}
+          }
           const audio = new Audio(previewUrl);
+          audio.preload = 'auto';
           state.audio = audio;
           highlightPlaying(track.id);
-          audio.onended = () => { nextShuffle(); };
-          audio.onerror = () => { nextShuffle(); };
+          audio.onended = () => {
+            const s = window._shuffle;
+            if (!s || s.isPlaying !== true) return; // don't advance if stopped
+            nextShuffle();
+          };
+          audio.onerror = () => {
+            const s = window._shuffle;
+            if (!s || s.isPlaying !== true) return;
+            nextShuffle();
+          };
           audio.play().then(() => {
             showNotification(`▶️ ${track.name} — ${(track.artists||[]).map(a=>a.name).join(', ')}`, 'success');
-          }).catch(() => nextShuffle());
+          }).catch(() => {
+            const s = window._shuffle;
+            if (!s || s.isPlaying !== true) return;
+            nextShuffle();
+          });
         } catch (_) {
+          const s = window._shuffle;
+          if (!s || s.isPlaying !== true) return;
           nextShuffle();
         }
       }
@@ -339,7 +360,14 @@ if (window.location.pathname.includes('/callback')) {
 
       function stopShuffle() {
         const state = window._shuffle;
-        if (state?.audio) { try { state.audio.pause(); } catch(_){} }
+        if (state?.audio) {
+          try {
+            state.audio.onended = null;
+            state.audio.onerror = null;
+            state.audio.pause();
+            state.audio.currentTime = 0;
+          } catch(_){ }
+        }
         window._shuffle = { isPlaying: false, queue: [], index: 0, audio: null };
         if (shuffleBtn) {
           shuffleBtn.classList.remove('btn-loading');
