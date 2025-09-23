@@ -387,16 +387,7 @@ if (window.location.pathname.includes('/callback')) {
       }
 
       // Ensure the Shuffle button toggles reliably even after a stop
-      const shuffleBtn = document.getElementById('shuffle-play');
-      if (shuffleBtn) {
-        shuffleBtn.onclick = () => {
-          if (!window._shuffle || window._shuffle.isPlaying !== true) {
-            startShuffle();
-          } else {
-            stopShuffle();
-          }
-        };
-      }
+      // (duplicate handler removed to avoid redeclaration)
 
       // Add event listener for mood selector to filter songs immediately
       moodSelector.addEventListener('change', async () => {
