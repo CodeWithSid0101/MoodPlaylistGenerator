@@ -221,6 +221,93 @@ if (window.location.pathname.includes('/callback')) {
         await showLikedSongs(accessToken, playlistDiv);
       });
 
+      // Add Shuffle Play handler (preview-based)
+      const shuffleBtn = document.getElementById('shuffle-play');
+      if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', () => {
+          if (!window._shuffle || window._shuffle.isPlaying !== true) {
+            startShuffle();
+          } else {
+            stopShuffle();
+          }
+        });
+      }
+
+      function getPlayableTracks() {
+        const tracks = window._currentTracks || window._allTracks || [];
+        const seen = new Set();
+        const playable = [];
+        for (const t of tracks) {
+          if (t?.id && t.preview_url && !seen.has(t.id)) {
+            seen.add(t.id);
+            playable.push(t);
+          }
+        }
+        return playable;
+      }
+
+      function startShuffle() {
+        const playable = getPlayableTracks();
+        if (!playable.length) {
+          showNotification('No previewable tracks to play. Generate or show liked songs.', 'error');
+          return;
+        }
+        const queue = shuffleArray(playable);
+        window._shuffle = { isPlaying: true, queue, index: 0, audio: null };
+        playCurrent();
+        if (shuffleBtn) {
+          shuffleBtn.classList.add('btn-loading');
+          shuffleBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+        }
+      }
+
+      function playCurrent() {
+        const state = window._shuffle;
+        if (!state || state.isPlaying !== true) return;
+        const track = state.queue[state.index];
+        try {
+          if (state.audio) { try { state.audio.pause(); } catch(_){} }
+          const audio = new Audio(track.preview_url);
+          state.audio = audio;
+          highlightPlaying(track.id);
+          audio.onended = () => { nextShuffle(); };
+          audio.onerror = () => { nextShuffle(); };
+          audio.play().then(() => {
+            showNotification(`▶️ ${track.name} — ${(track.artists||[]).map(a=>a.name).join(', ')}`, 'success');
+          }).catch(() => nextShuffle());
+        } catch (_) {
+          nextShuffle();
+        }
+      }
+
+      function nextShuffle() {
+        const state = window._shuffle;
+        if (!state || state.isPlaying !== true) return;
+        state.index = (state.index + 1) % state.queue.length;
+        playCurrent();
+      }
+
+      function stopShuffle() {
+        const state = window._shuffle;
+        if (state?.audio) { try { state.audio.pause(); } catch(_){} }
+        window._shuffle = { isPlaying: false, queue: [], index: 0, audio: null };
+        if (shuffleBtn) {
+          shuffleBtn.classList.remove('btn-loading');
+          shuffleBtn.innerHTML = '<i class="fas fa-random"></i> Shuffle Play';
+        }
+        clearPlayingHighlight();
+      }
+
+      function highlightPlaying(trackId) {
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
+        const el = document.querySelector(`.track-item[data-track-id="${trackId}"]`);
+        if (el) el.classList.add('playing');
+      }
+
+      function clearPlayingHighlight() {
+        document.querySelectorAll('.track-item').forEach(el => el.classList.remove('playing'));
+      }
+
       // Add event listener for mood selector to filter songs immediately
       moodSelector.addEventListener('change', async () => {
         const mood = moodSelector.value;
@@ -446,7 +533,7 @@ if (window.location.pathname.includes('/callback')) {
                 const heartIcon = isSaved ? '❤️' : '🤍';
 
                 return `
-                  <div class="track-item">
+                  <div class="track-item" data-track-id="${track.id}">
                     <img src="${albumImage}" alt="Album" class="track-img" onerror="this.src='${defaultImage}'">
                     <div class="track-info">
                       <h4>${trackName}</h4>
@@ -484,6 +571,14 @@ if (window.location.pathname.includes('/callback')) {
             renderTracksWithoutSavedStatus();
           });
 
+        // Inject minimal CSS for playing highlight (once)
+        if (!document.getElementById('playing-style')) {
+          const s = document.createElement('style');
+          s.id = 'playing-style';
+          s.textContent = `.track-item.playing{outline:2px solid #1db954;border-radius:8px;background:rgba(29,185,84,0.08);}`;
+          document.head.appendChild(s);
+        }
+
         // Fallback function if checking saved status fails
         function renderTracksWithoutSavedStatus() {
           playlistDiv.innerHTML = `<h3>🎧 ${title}:</h3>` + 
@@ -496,7 +591,7 @@ if (window.location.pathname.includes('/callback')) {
               const spotifyUrl = track.external_urls?.spotify || '#';
 
               return `
-                <div class="track-item">
+                <div class="track-item" data-track-id="${track.id}">
                   <img src="${albumImage}" alt="Album" class="track-img" onerror="this.src='${defaultImage}'">
                   <div class="track-info">
                     <h4>${trackName}</h4>
